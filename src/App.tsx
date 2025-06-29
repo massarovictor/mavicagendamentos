@@ -13,6 +13,9 @@ import GerenciarUsuarios from "./pages/GerenciarUsuarios";
 import TodosAgendamentos from "./pages/TodosAgendamentos";
 import NovoAgendamento from "./pages/NovoAgendamento";
 import MeusAgendamentos from "./pages/MeusAgendamentos";
+import MeusEspacos from "./pages/MeusEspacos";
+import AprovarAgendamentos from "./pages/AprovarAgendamentos";
+import EspacosDisponiveis from "./pages/EspacosDisponiveis";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +78,30 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <MeusAgendamentos />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/meus-espacos" 
+        element={
+          <ProtectedRoute>
+            <MeusEspacos />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/aprovar-agendamentos" 
+        element={
+          <ProtectedRoute>
+            <AprovarAgendamentos />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/espacos-disponiveis" 
+        element={
+          <ProtectedRoute>
+            <EspacosDisponiveis />
           </ProtectedRoute>
         } 
       />
