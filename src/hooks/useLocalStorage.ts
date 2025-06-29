@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Usuario, Espaco, Agendamento } from '@/types';
+import { Usuario, Espaco, Agendamento, AgendamentoFixo } from '@/types';
 
 const INITIAL_DATA = {
   usuarios: [
@@ -38,32 +38,38 @@ const INITIAL_DATA = {
       observacoes: 'Apresentação do projeto',
       criadoEm: new Date().toISOString()
     }
-  ]
+  ],
+  agendamentosFixos: []
 };
 
 export const useLocalStorage = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [espacos, setEspacos] = useState<Espaco[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [agendamentosFixos, setAgendamentosFixos] = useState<AgendamentoFixo[]>([]);
 
   useEffect(() => {
     const loadData = () => {
       const storedUsuarios = localStorage.getItem('usuarios');
       const storedEspacos = localStorage.getItem('espacos');
       const storedAgendamentos = localStorage.getItem('agendamentos');
+      const storedAgendamentosFixos = localStorage.getItem('agendamentosFixos');
 
       if (!storedUsuarios || !storedEspacos || !storedAgendamentos) {
         localStorage.setItem('usuarios', JSON.stringify(INITIAL_DATA.usuarios));
         localStorage.setItem('espacos', JSON.stringify(INITIAL_DATA.espacos));
         localStorage.setItem('agendamentos', JSON.stringify(INITIAL_DATA.agendamentos));
+        localStorage.setItem('agendamentosFixos', JSON.stringify(INITIAL_DATA.agendamentosFixos));
         
         setUsuarios(INITIAL_DATA.usuarios);
         setEspacos(INITIAL_DATA.espacos);
         setAgendamentos(INITIAL_DATA.agendamentos);
+        setAgendamentosFixos(INITIAL_DATA.agendamentosFixos);
       } else {
         setUsuarios(JSON.parse(storedUsuarios));
         setEspacos(JSON.parse(storedEspacos));
         setAgendamentos(JSON.parse(storedAgendamentos));
+        setAgendamentosFixos(storedAgendamentosFixos ? JSON.parse(storedAgendamentosFixos) : []);
       }
     };
 
@@ -85,12 +91,19 @@ export const useLocalStorage = () => {
     setAgendamentos(newAgendamentos);
   };
 
+  const updateAgendamentosFixos = (newAgendamentosFixos: AgendamentoFixo[]) => {
+    localStorage.setItem('agendamentosFixos', JSON.stringify(newAgendamentosFixos));
+    setAgendamentosFixos(newAgendamentosFixos);
+  };
+
   return {
     usuarios,
     espacos,
     agendamentos,
+    agendamentosFixos,
     updateUsuarios,
     updateEspacos,
-    updateAgendamentos
+    updateAgendamentos,
+    updateAgendamentosFixos
   };
 };

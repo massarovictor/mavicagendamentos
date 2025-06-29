@@ -27,6 +27,21 @@ export interface Agendamento {
   status: 'pendente' | 'aprovado' | 'rejeitado';
   observacoes?: string;
   criadoEm: string;
+  agendamentoFixoId?: number; // Referência ao agendamento fixo que gerou este agendamento
+}
+
+export interface AgendamentoFixo {
+  id: number;
+  espacoId: number;
+  usuarioId: number;
+  dataInicio: string;
+  dataFim: string;
+  horaInicio: string;
+  horaFim: string;
+  diasSemana: number[]; // 0-6 (domingo-sábado)
+  observacoes?: string;
+  ativo: boolean;
+  criadoEm: string;
 }
 
 export interface AuthState {

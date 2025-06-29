@@ -16,6 +16,7 @@ import MeusAgendamentos from "./pages/MeusAgendamentos";
 import MeusEspacos from "./pages/MeusEspacos";
 import AprovarAgendamentos from "./pages/AprovarAgendamentos";
 import EspacosDisponiveis from "./pages/EspacosDisponiveis";
+import AgendamentosFixos from "./pages/AgendamentosFixos";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <EspacosDisponiveis />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/agendamentos-fixos" 
+        element={
+          <ProtectedRoute>
+            <AgendamentosFixos />
           </ProtectedRoute>
         } 
       />

@@ -18,6 +18,7 @@ import {
   User, 
   Plus,
   Check,
+  Clock,
 } from 'lucide-react';
 
 export function AppSidebar() {
@@ -38,6 +39,7 @@ export function AppSidebar() {
         { title: "Gerenciar Espaços", url: "/espacos", icon: Settings },
         { title: "Gerenciar Usuários", url: "/usuarios", icon: User },
         { title: "Todos Agendamentos", url: "/todos-agendamentos", icon: Calendar },
+        { title: "Agendamentos Fixos", url: "/agendamentos-fixos", icon: Clock },
       ];
     }
 
@@ -46,6 +48,7 @@ export function AppSidebar() {
         ...baseItems,
         { title: "Meus Espaços", url: "/meus-espacos", icon: Settings },
         { title: "Aprovar Agendamentos", url: "/aprovar-agendamentos", icon: Check },
+        { title: "Agendamentos Fixos", url: "/agendamentos-fixos", icon: Clock },
       ];
     }
 
