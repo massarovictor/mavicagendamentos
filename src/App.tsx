@@ -8,6 +8,11 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Layout from "./components/Layout";
+import GerenciarEspacos from "./pages/GerenciarEspacos";
+import GerenciarUsuarios from "./pages/GerenciarUsuarios";
+import TodosAgendamentos from "./pages/TodosAgendamentos";
+import NovoAgendamento from "./pages/NovoAgendamento";
+import MeusAgendamentos from "./pages/MeusAgendamentos";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +35,46 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/espacos" 
+        element={
+          <ProtectedRoute>
+            <GerenciarEspacos />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/usuarios" 
+        element={
+          <ProtectedRoute>
+            <GerenciarUsuarios />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/todos-agendamentos" 
+        element={
+          <ProtectedRoute>
+            <TodosAgendamentos />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/novo-agendamento" 
+        element={
+          <ProtectedRoute>
+            <NovoAgendamento />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/meus-agendamentos" 
+        element={
+          <ProtectedRoute>
+            <MeusAgendamentos />
           </ProtectedRoute>
         } 
       />

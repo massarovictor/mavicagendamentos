@@ -10,7 +10,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -19,11 +18,9 @@ import {
   User, 
   Plus,
   Check,
-  Trash
 } from 'lucide-react';
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar();
   const location = useLocation();
   const { usuario } = useAuth();
   const currentPath = location.pathname;
@@ -73,11 +70,11 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={`${collapsed ? "w-16" : "w-64"} border-r-2 ${getUserTypeColor()}`}>
+    <Sidebar className={`w-64 border-r-2 ${getUserTypeColor()}`}>
       <SidebarContent className="bg-white">
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 py-2 text-gray-600 font-medium">
-            {!collapsed && "Menu Principal"}
+            Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
@@ -93,7 +90,7 @@ export function AppSidebar() {
                       }`}
                     >
                       <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {!collapsed && <span className="font-medium">{item.title}</span>}
+                      <span className="font-medium">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
