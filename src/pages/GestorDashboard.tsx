@@ -1,12 +1,16 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/ui/loading-state';
+import { PageHeader } from '@/components/ui/page-header';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Settings, Check, Clock } from 'lucide-react';
+import { Calendar, Settings, Check, Clock, UserCog, AlertCircle } from 'lucide-react';
+import { formatAulas, formatDate, formatDateTime } from '@/utils/format';
+import { NumeroAula } from '@/types';
 
 const GestorDashboard = () => {
-  const { espacos, agendamentos, usuarios } = useLocalStorage();
+  const { espacos, agendamentos, usuarios, loading } = useSupabaseData();
   const { usuario } = useAuth();
 
   const meusEspacos = espacos.filter(e => usuario?.espacos?.includes(e.id));
@@ -21,98 +25,101 @@ const GestorDashboard = () => {
     .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
     .slice(0, 5);
 
-  const stats = [
-    {
-      title: "Meus Espaços",
-      value: meusEspacos.length,
-      description: "Espaços sob sua gestão",
-      icon: Settings,
-      color: "bg-green-500",
-      lightColor: "bg-green-50",
-      textColor: "text-green-600"
-    },
-    {
-      title: "Pendentes Aprovação",
-      value: pendentesAprovacao.length,
-      description: "Aguardando sua aprovação",
-      icon: Clock,
-      color: "bg-orange-500",
-      lightColor: "bg-orange-50",
-      textColor: "text-orange-600"
-    },
-    {
-      title: "Próximos Agendamentos",
-      value: proximosAgendamentos.length,
-      description: "Nos seus espaços",
-      icon: Calendar,
-      color: "bg-blue-500",
-      lightColor: "bg-blue-50",
-      textColor: "text-blue-600"
-    },
-    {
-      title: "Meus Agendamentos",
-      value: meusAgendamentos.length,
-      description: "Seus agendamentos pessoais",
-      icon: Check,
-      color: "bg-purple-500",
-      lightColor: "bg-purple-50",
-      textColor: "text-purple-600"
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'aprovado': return 'bg-green-100 text-green-800';
+      case 'rejeitado': return 'bg-red-100 text-red-800';
+      case 'pendente': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
-  ];
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'aprovado': return 'Aprovado';
+      case 'rejeitado': return 'Rejeitado';
+      case 'pendente': return 'Pendente';
+      default: return status;
+    }
+  };
+
+  if (loading) {
+    return <LoadingSpinner message="Carregando dados..." />;
+  }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard do Gestor</h1>
-        <p className="text-gray-600 mt-2">Gerencie seus espaços e agendamentos</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.lightColor}`}>
-                <stat.icon className={`h-5 w-5 ${stat.textColor}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-              <p className="text-xs text-gray-600 mt-1">
-                {stat.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+    <div className="space-y-6 p-6">
+      <PageHeader 
+        title="Dashboard do Gestor"
+        subtitle="Gerencie seus espaços e agendamentos"
+        icon={UserCog}
+        stats={[
+          {
+            label: "Meus Espaços",
+            value: meusEspacos.length,
+            icon: Settings,
+            color: "bg-green-100"
+          },
+          {
+            label: "Pendentes Aprovação", 
+            value: pendentesAprovacao.length,
+            icon: Clock,
+            color: "bg-orange-100"
+          },
+          {
+            label: "Próximos Agendamentos",
+            value: proximosAgendamentos.length,
+            icon: Calendar,
+            color: "bg-blue-100"
+          },
+          {
+            label: "Meus Agendamentos",
+            value: meusAgendamentos.length,
+            icon: Check,
+            color: "bg-purple-100"
+          }
+        ]}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800">Agendamentos Pendentes</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              Agendamentos Pendentes
+            </CardTitle>
             <CardDescription>Requerem sua aprovação</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {pendentesAprovacao.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Nenhum agendamento pendente</p>
+                <div className="text-center py-8">
+                  <div className="text-gray-500">
+                    <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">Nenhum agendamento pendente</p>
+                    <p className="text-sm">Todos os agendamentos foram processados</p>
+                  </div>
+                </div>
               ) : (
                 pendentesAprovacao.map((agendamento) => {
                   const espaco = espacos.find(e => e.id === agendamento.espacoId);
                   const usuarioAgendamento = usuarios.find(u => u.id === agendamento.usuarioId);
                   return (
-                    <div key={agendamento.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
-                      <div>
-                        <p className="font-medium text-gray-800">{espaco?.nome}</p>
+                    <div key={agendamento.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-orange-50 rounded-lg border-l-4 border-orange-400 gap-3 hover:bg-orange-100 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 truncate">{espaco?.nome}</p>
                         <p className="text-sm text-gray-600">
-                          {usuarioAgendamento?.nome} - {agendamento.data} das {agendamento.horaInicio} às {agendamento.horaFim}
+                          <span className="block sm:inline">{usuarioAgendamento?.nome}</span>
+                          <span className="block sm:inline sm:ml-1">- {formatDate(agendamento.data)}</span>
+                          <span className="block sm:inline sm:ml-1">{formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)}</span>
                         </p>
+                        {agendamento.observacoes && (
+                          <p className="text-sm text-orange-600 mt-1 truncate">{agendamento.observacoes}</p>
+                        )}
                       </div>
-                      <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                      <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
                         Pendente
-                      </span>
+                      </Badge>
                     </div>
                   );
                 })
@@ -121,34 +128,42 @@ const GestorDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="text-lg font-semibold text-gray-800">Próximos Agendamentos</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-blue-600" />
+              Próximos Agendamentos
+            </CardTitle>
             <CardDescription>Nos seus espaços</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {proximosAgendamentos.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Nenhum agendamento próximo</p>
+                <div className="text-center py-8">
+                  <div className="text-gray-500">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">Nenhum agendamento próximo</p>
+                    <p className="text-sm">Seus espaços estão livres</p>
+                  </div>
+                </div>
               ) : (
                 proximosAgendamentos.map((agendamento) => {
                   const espaco = espacos.find(e => e.id === agendamento.espacoId);
                   const usuarioAgendamento = usuarios.find(u => u.id === agendamento.usuarioId);
                   return (
-                    <div key={agendamento.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-800">{espaco?.nome}</p>
+                    <div key={agendamento.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 truncate">{espaco?.nome}</p>
                         <p className="text-sm text-gray-600">
-                          {usuarioAgendamento?.nome} - {agendamento.data} das {agendamento.horaInicio} às {agendamento.horaFim}
+                          {usuarioAgendamento?.nome} - {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
                         </p>
+                        {agendamento.observacoes && (
+                          <p className="text-sm text-gray-500 mt-1 truncate">{agendamento.observacoes}</p>
+                        )}
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        agendamento.status === 'aprovado' 
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {agendamento.status}
-                      </span>
+                      <Badge variant="outline" className={getStatusColor(agendamento.status)}>
+                        {getStatusLabel(agendamento.status)}
+                      </Badge>
                     </div>
                   );
                 })
@@ -158,26 +173,52 @@ const GestorDashboard = () => {
         </Card>
       </div>
 
-      <Card>
+      <Card className="hover:shadow-lg transition-shadow">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-800">Meus Espaços</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="w-5 h-5 text-green-600" />
+            Meus Espaços
+          </CardTitle>
           <CardDescription>Espaços sob sua gestão</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {meusEspacos.map((espaco) => {
-              const agendamentosEspaco = agendamentosMeusEspacos.filter(a => a.espacoId === espaco.id);
-              return (
-                <div key={espaco.id} className="p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h3 className="font-semibold text-gray-800">{espaco.nome}</h3>
-                  <p className="text-sm text-gray-600 mt-1">Capacidade: {espaco.capacidade} pessoas</p>
-                  <p className="text-sm text-green-600 mt-2 font-medium">
-                    {agendamentosEspaco.length} agendamentos
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+          {meusEspacos.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500">
+                <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p className="font-medium">Nenhum espaço atribuído</p>
+                <p className="text-sm">Contate o administrador para obter acesso</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {meusEspacos.map((espaco) => {
+                const agendamentosEspaco = agendamentosMeusEspacos.filter(a => a.espacoId === espaco.id);
+                const pendentes = agendamentosEspaco.filter(a => a.status === 'pendente').length;
+                return (
+                  <div key={espaco.id} className="p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors">
+                    <h3 className="font-semibold text-gray-900 truncate">{espaco.nome}</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Capacidade: {espaco.capacidade} pessoas
+                    </p>
+                    {espaco.descricao && (
+                      <p className="text-sm text-gray-500 mt-1 truncate">{espaco.descricao}</p>
+                    )}
+                    <div className="flex items-center justify-between mt-3">
+                      <Badge variant="secondary" className="bg-green-100 text-green-700">
+                        {agendamentosEspaco.length} total
+                      </Badge>
+                      {pendentes > 0 && (
+                        <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-200">
+                          {pendentes} pendente{pendentes > 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

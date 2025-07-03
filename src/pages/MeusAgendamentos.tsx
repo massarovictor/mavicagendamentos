@@ -1,16 +1,63 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
+import { ResponsiveTable } from '@/components/ui/responsive-table';
+import { LoadingSpinner } from '@/components/ui/loading-state';
+import { FilterBar } from '@/components/shared/FilterBar';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Clock, MapPin } from 'lucide-react';
+import { useFilters } from '@/hooks/useFilters';
+import { usePagination } from '@/hooks/usePagination';
+import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Search, BookOpen, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { formatAulas, formatDate, formatDateTime } from '@/utils/format';
+import { NumeroAula } from '@/types';
+
+// Opções de status
+const statusOptions = [
+  { value: 'todos', label: 'Todos os status' },
+  { value: 'pendente', label: 'Pendentes' },
+  { value: 'aprovado', label: 'Aprovados' },
+  { value: 'rejeitado', label: 'Rejeitados' }
+];
 
 const MeusAgendamentos = () => {
-  const { agendamentos, espacos } = useLocalStorage();
+  const { agendamentos, espacos, loading } = useSupabaseData();
   const { usuario } = useAuth();
+  const filters = useFilters();
 
   const meusAgendamentos = agendamentos.filter(a => a.usuarioId === usuario?.id);
+  
+  // Aplicar filtros
+  const filteredAgendamentos = React.useMemo(() => {
+    let filtered = meusAgendamentos;
+
+    // Filtro de texto
+    if (filters.filters.searchTerm) {
+      const searchLower = filters.filters.searchTerm.toLowerCase();
+      filtered = filtered.filter(a => {
+        const espacoNome = espacos.find(e => e.id === a.espacoId)?.nome || '';
+        return (
+          espacoNome.toLowerCase().includes(searchLower) ||
+          a.observacoes?.toLowerCase().includes(searchLower)
+        );
+      });
+    }
+
+    // Filtro de status
+    if (filters.filters.statusFilter && filters.filters.statusFilter !== 'todos') {
+      filtered = filtered.filter(a => a.status === filters.filters.statusFilter);
+    }
+
+    return filtered;
+  }, [meusAgendamentos, espacos, filters.filters]);
+
+  const pagination = usePagination(filteredAgendamentos, { initialPageSize: 10 });
   
   const getEspacoNome = (espacoId: number) => {
     return espacos.find(e => e.id === espacoId)?.nome || 'Espaço não encontrado';
@@ -34,13 +81,6 @@ const MeusAgendamentos = () => {
     }
   };
 
-  const stats = {
-    total: meusAgendamentos.length,
-    pendentes: meusAgendamentos.filter(a => a.status === 'pendente').length,
-    aprovados: meusAgendamentos.filter(a => a.status === 'aprovado').length,
-    rejeitados: meusAgendamentos.filter(a => a.status === 'rejeitado').length
-  };
-
   // Separar agendamentos por status
   const agendamentosPendentes = meusAgendamentos.filter(a => a.status === 'pendente');
   const agendamentosAprovados = meusAgendamentos.filter(a => a.status === 'aprovado');
@@ -48,76 +88,70 @@ const MeusAgendamentos = () => {
     new Date(a.data) >= new Date(new Date().toISOString().split('T')[0])
   ).slice(0, 3);
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Meus Agendamentos</h1>
-        <p className="text-gray-600 mt-2">Visualize e acompanhe seus agendamentos</p>
-      </div>
+    if (loading) {
+    return <LoadingSpinner message="Carregando agendamentos..." />;
+  }
 
-      {/* Cards de estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendentes}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aprovados</CardTitle>
-            <Calendar className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.aprovados}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rejeitados</CardTitle>
-            <MapPin className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.rejeitados}</div>
-          </CardContent>
-        </Card>
-      </div>
+  return (
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <PageHeader 
+        title="Meus Agendamentos"
+        subtitle="Visualize e acompanhe seus agendamentos"
+        icon={BookOpen}
+        stats={[
+          {
+            label: "Total",
+            value: meusAgendamentos.length,
+            icon: Calendar,
+            color: "bg-blue-100"
+          },
+          {
+            label: "Pendentes", 
+            value: agendamentosPendentes.length,
+            icon: Clock,
+            color: "bg-yellow-100"
+          },
+          {
+            label: "Aprovados",
+            value: agendamentosAprovados.length, 
+            icon: CheckCircle,
+            color: "bg-green-100"
+          },
+          {
+            label: "Rejeitados",
+            value: meusAgendamentos.filter(a => a.status === 'rejeitado').length,
+            icon: X,
+            color: "bg-red-100"
+          }
+        ]}
+      />
+
+      {/* Seção eliminada - estatísticas agora estão no PageHeader */}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Próximos agendamentos */}
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Próximos Agendamentos</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-green-600" />
+              Próximos Agendamentos
+            </CardTitle>
             <CardDescription>Seus agendamentos aprovados mais próximos</CardDescription>
           </CardHeader>
           <CardContent>
             {proximosAgendamentos.length > 0 ? (
               <div className="space-y-3">
                 {proximosAgendamentos.map((agendamento) => (
-                  <div key={agendamento.id} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div key={agendamento.id} className="p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors">
                     <div className="font-medium text-green-800">
                       {getEspacoNome(agendamento.espacoId)}
                     </div>
                     <div className="text-sm text-green-600">
-                      {new Date(agendamento.data).toLocaleDateString('pt-BR')} às {agendamento.horaInicio}
+                      {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
                     </div>
                     {agendamento.observacoes && (
-                      <div className="text-xs text-green-600 mt-1">
+                      <div className="text-sm text-green-600 mt-1 truncate">
                         {agendamento.observacoes}
                       </div>
                     )}
@@ -125,30 +159,39 @@ const MeusAgendamentos = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">Nenhum agendamento aprovado próximo</p>
+              <div className="text-center py-8">
+                <div className="text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">Nenhum agendamento próximo</p>
+                  <p className="text-sm">Agendamentos aprovados aparecerão aqui</p>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Agendamentos pendentes */}
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Pendentes de Aprovação</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-yellow-600" />
+              Pendentes de Aprovação
+            </CardTitle>
             <CardDescription>Agendamentos aguardando aprovação</CardDescription>
           </CardHeader>
           <CardContent>
             {agendamentosPendentes.length > 0 ? (
               <div className="space-y-3">
-                {agendamentosPendentes.map((agendamento) => (
-                  <div key={agendamento.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                {agendamentosPendentes.slice(0, 3).map((agendamento) => (
+                  <div key={agendamento.id} className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg hover:bg-yellow-100 transition-colors">
                     <div className="font-medium text-yellow-800">
                       {getEspacoNome(agendamento.espacoId)}
                     </div>
                     <div className="text-sm text-yellow-600">
-                      {new Date(agendamento.data).toLocaleDateString('pt-BR')} às {agendamento.horaInicio}
+                      {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
                     </div>
                     {agendamento.observacoes && (
-                      <div className="text-xs text-yellow-600 mt-1">
+                      <div className="text-sm text-yellow-600 mt-1 truncate">
                         {agendamento.observacoes}
                       </div>
                     )}
@@ -156,51 +199,133 @@ const MeusAgendamentos = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">Nenhum agendamento pendente</p>
+              <div className="text-center py-8">
+                <div className="text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">Nenhum agendamento pendente</p>
+                  <p className="text-sm">Agendamentos pendentes aparecerão aqui</p>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabela com todos os agendamentos */}
+      {/* Filtros */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <Label htmlFor="search" className="text-sm font-medium text-gray-700">Buscar agendamentos</Label>
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  id="search"
+                  placeholder="Buscar em meus agendamentos..."
+                  value={filters.filters.searchTerm || ''}
+                  onChange={(e) => filters.updateFilter('searchTerm', e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="sm:w-48">
+              <Label htmlFor="status" className="text-sm font-medium text-gray-700">Filtrar por status</Label>
+              <Select 
+                value={filters.filters.statusFilter || 'todos'} 
+                onValueChange={(value) => filters.updateFilter('statusFilter', value)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:w-auto">
+              <Label className="text-sm font-medium text-gray-700">&nbsp;</Label>
+              <Button 
+                variant="outline" 
+                onClick={filters.clearFilters}
+                className="w-full mt-1"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabela responsiva com todos os agendamentos */}
       <Card>
         <CardHeader>
-          <CardTitle>Histórico Completo</CardTitle>
-          <CardDescription>Todos os seus agendamentos</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-orange-600" />
+            Histórico Completo
+          </CardTitle>
+          <CardDescription>
+            Mostrando {pagination.paginationInfo.startItem} a {pagination.paginationInfo.endItem} de {pagination.paginationInfo.totalItems} agendamentos
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Espaço</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Horário</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Observações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {meusAgendamentos.map((agendamento) => (
-                <TableRow key={agendamento.id}>
-                  <TableCell className="font-medium">
-                    {getEspacoNome(agendamento.espacoId)}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(agendamento.data).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell>
-                    {agendamento.horaInicio} - {agendamento.horaFim}
-                  </TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(agendamento.status)}`}>
-                      {getStatusLabel(agendamento.status)}
-                    </span>
-                  </TableCell>
-                  <TableCell>{agendamento.observacoes || '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <ResponsiveTable
+            data={pagination.paginatedData}
+            columns={[
+              {
+                key: 'espaco',
+                header: 'Espaço',
+                accessor: (agendamento) => getEspacoNome(agendamento.espacoId),
+                mobileLabel: 'Espaço'
+              },
+              {
+                key: 'data',
+                header: 'Data',
+                accessor: (agendamento) => formatDate(agendamento.data),
+                mobileLabel: 'Data'
+              },
+              {
+                key: 'horario',
+                header: 'Horário',
+                accessor: (agendamento) => formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula),
+                mobileLabel: 'Horário',
+                hiddenOnMobile: false
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                accessor: (agendamento) => (
+                  <Badge className={getStatusColor(agendamento.status)} variant="outline">
+                    {getStatusLabel(agendamento.status)}
+                  </Badge>
+                ),
+                mobileLabel: 'Status'
+              },
+              {
+                key: 'observacoes',
+                header: 'Observações',
+                accessor: (agendamento) => (
+                  <span className="text-sm text-gray-600 truncate block max-w-[200px]">
+                    {agendamento.observacoes || '-'}
+                  </span>
+                ),
+                mobileLabel: 'Observações',
+                hiddenOnMobile: true
+              }
+            ]}
+            emptyState={
+              <div className="text-center py-8">
+                <div className="text-gray-500">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium">Nenhum agendamento encontrado</p>
+                  <p className="text-sm">Tente ajustar os filtros ou criar um novo agendamento</p>
+                </div>
+              </div>
+            }
+          />
         </CardContent>
       </Card>
     </div>

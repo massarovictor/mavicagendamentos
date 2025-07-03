@@ -29,7 +29,7 @@ export function AppSidebar() {
   const getMenuItems = () => {
     const baseItems = [
       { title: "Dashboard", url: "/dashboard", icon: Calendar },
-      { title: "Fazer Agendamento", url: "/novo-agendamento", icon: Plus },
+      { title: "Novo Agendamento", url: "/novo-agendamento", icon: Plus },
       { title: "Meus Agendamentos", url: "/meus-agendamentos", icon: Calendar },
     ];
 

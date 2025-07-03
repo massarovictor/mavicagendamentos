@@ -1,109 +1,119 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FormField } from '@/components/ui/form-field';
+import { LoadingSpinner } from '@/components/ui/loading-state';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
+import { useNotifications } from '@/hooks/useNotifications';
+import { Usuario } from '@/types';
 
 const Login = () => {
-  const [usuario, setUsuario] = useState('');
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [tipoUsuario, setTipoUsuario] = useState<'admin' | 'gestor' | 'usuario'>('usuario');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
-  const { usuarios } = useLocalStorage();
+  const notifications = useNotifications();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const convertUsuario = (row: any): Usuario => ({
+    id: parseInt(row.id.replace(/-/g, '').substring(0, 8), 16),
+    nome: row.nome,
+    email: row.email,
+    tipo: row.tipo,
+    ativo: row.ativo,
+    espacos: row.espacos || undefined,
+    telefone: row.telefone || undefined,
+  });
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!usuario || !senha) {
-      toast({
-        title: "Erro",
-        description: "Preencha todos os campos",
-        variant: "destructive"
-      });
+    if (!email || !senha) {
+      notifications.error("Erro", "Preencha todos os campos");
       return;
     }
 
-    // Buscar usuário pelo nome e tipo
-    const usuarioEncontrado = usuarios.find(u => 
-      u.nome.toLowerCase().includes(usuario.toLowerCase()) && u.tipo === tipoUsuario
-    );
+    setLoading(true);
 
-    if (usuarioEncontrado) {
-      login(usuarioEncontrado);
-      toast({
-        title: "Login realizado!",
-        description: `Bem-vindo, ${usuarioEncontrado.nome}!`
-      });
-    } else {
-      toast({
-        title: "Erro",
-        description: "Usuário não encontrado ou tipo incorreto",
-        variant: "destructive"
-      });
+    try {
+      // Buscar usuário pelo email no Supabase
+      const { data: usuarioData, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('email', email.toLowerCase().trim())
+        .eq('ativo', true)
+        .single();
+
+      if (error || !usuarioData) {
+        notifications.error("Erro de Login", "Usuário não encontrado ou inativo");
+        setLoading(false);
+        return;
+      }
+
+      // Converter dados do Supabase para o formato da aplicação
+      const usuario = convertUsuario(usuarioData);
+
+      // Fazer login
+      login(usuario);
+      notifications.success("Login realizado", `Bem-vindo, ${usuario.nome}!`);
+
+    } catch (error) {
+      console.error('Erro no login:', error);
+      notifications.error("Erro", "Falha ao conectar com o servidor");
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <LoadingSpinner message="Verificando credenciais..." size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <Card className="w-full max-w-md shadow-xl animate-fade-in">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-gray-800">Sistema de Agendamento</CardTitle>
+          <CardTitle className="text-3xl font-bold text-gray-800">Login</CardTitle>
           <CardDescription className="text-gray-600">
-            Faça login para acessar o sistema
+            Acesse sua conta
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Nome de usuário</label>
-              <Input
-                type="text"
-                value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
-                placeholder="Digite seu nome"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Senha</label>
-              <Input
-                type="password"
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                placeholder="Digite sua senha"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Tipo de usuário</label>
-              <Select value={tipoUsuario} onValueChange={(value: any) => setTipoUsuario(value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="gestor">Gestor</SelectItem>
-                  <SelectItem value="usuario">Usuário</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" className="w-full">
-              Entrar
+            <FormField
+              name="email"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              validation={{
+                required: true,
+                pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+              }}
+              placeholder="Digite seu email"
+              required
+            />
+            <FormField
+              name="senha"
+              label="Senha"
+              type="password"
+              value={senha}
+              onChange={setSenha}
+              validation={{
+                required: true,
+                minLength: 1
+              }}
+              placeholder="Digite sua senha"
+              required
+            />
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Verificando...' : 'Entrar'}
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-medium text-gray-800 mb-2">Usuários de teste:</h4>
-            <div className="text-sm text-gray-600 space-y-1">
-              <div><strong>Admin:</strong> Administrador</div>
-              <div><strong>Gestor:</strong> Gestor Principal</div>
-              <div><strong>Usuário:</strong> João Silva ou Maria Santos</div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

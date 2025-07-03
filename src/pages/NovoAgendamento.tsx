@@ -1,272 +1,544 @@
-
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { LoadingSpinner } from '@/components/ui/loading-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PageHeader } from '@/components/ui/page-header';
+import { useForm } from '@/hooks/useForm';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
-import { Agendamento } from '@/types';
-import { Calendar, Plus } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Calendar, Clock, Building2, User, AlertTriangle, CheckCircle, Info, Plus } from 'lucide-react';
+import { AULAS_HORARIOS, NumeroAula, Agendamento } from '@/types';
+import { formatAulas } from '@/utils/format';
+import { BusinessValidations, DataIntegrityValidations, SecurityValidations, agendamentoSchema } from '@/utils/validations';
+import { HorarioGrid } from '@/components/shared/HorarioGrid';
+
+interface AgendamentoFormData {
+  espacoId: number;
+  data: string;
+  aulaInicio: NumeroAula;
+  aulaFim: NumeroAula;
+  observacoes: string;
+}
 
 const NovoAgendamento = () => {
-  const { espacos, agendamentos, updateAgendamentos } = useLocalStorage();
+  const { espacos, agendamentos, agendamentosFixos, usuarios, loading, actions } = useSupabaseData();
   const { usuario } = useAuth();
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    espacoId: '',
-    data: '',
-    horaInicio: '',
-    horaFim: '',
-    observacoes: ''
+  const notifications = useNotifications();
+  const [calendarOpen, setCalendarOpen] = React.useState(false);
+
+  const espacosAtivos = useMemo(() => 
+    espacos.filter(e => e.ativo), 
+    [espacos]
+  );
+
+  const getAulaOptions = () => {
+    return Array.from({ length: 9 }, (_, i) => {
+      const aula = (i + 1) as NumeroAula;
+      const horario = AULAS_HORARIOS[aula];
+      return {
+        value: aula,
+        label: horario ? `${aula}ª aula (${horario.inicio} - ${horario.fim})` : `${aula}ª aula`
+      };
+    });
+  };
+
+  const form = useForm<AgendamentoFormData>({
+    initialValues: {
+      espacoId: 0,
+      data: new Date().toISOString().split('T')[0], // Data de hoje como padrão
+      aulaInicio: 1,
+      aulaFim: 1,
+      observacoes: ''
+    },
+    onSubmit: async (values) => {
+      // Verificação de rate limiting
+      const rateLimitKey = `user_${usuario!.id}_${new Date().toDateString()}`;
+      if (!SecurityValidations.rateLimit(rateLimitKey, 10)) {
+        notifications.error('Limite excedido', 'Muitas tentativas de agendamento hoje. Tente novamente amanhã.');
+        return;
+      }
+
+      // Validação Zod primeiro
+      try {
+        const validatedData = agendamentoSchema.parse(values);
+        console.log('Dados validados pelo Zod:', validatedData);
+      } catch (error: any) {
+        if (error.errors) {
+          error.errors.forEach((err: any) => {
+            notifications.error('Erro de validação', err.message);
+          });
+        }
+        return;
+      }
+
+      // Sanitizar entrada do usuário
+      const sanitizedValues = {
+        ...values,
+        observacoes: DataIntegrityValidations.sanitizeString(values.observacoes)
+      };
+
+      // Validações de negócio adicionais
+      const businessErrors = validateBusinessRules(sanitizedValues);
+      if (businessErrors.length > 0) {
+        businessErrors.forEach(error => notifications.error('Erro de validação', error));
+        return;
+      }
+
+
+
+      try {
+        // Criar agendamento
+        const novoAgendamento: Agendamento = {
+          id: 0, // ID temporário - será substituído pelo Supabase
+          espacoId: sanitizedValues.espacoId,
+          usuarioId: usuario!.id,
+          data: sanitizedValues.data,
+          aulaInicio: sanitizedValues.aulaInicio,
+          aulaFim: sanitizedValues.aulaFim,
+          status: 'pendente',
+          observacoes: sanitizedValues.observacoes,
+          criadoEm: new Date().toISOString()
+        };
+
+        const success = await actions.addAgendamento(novoAgendamento);
+        if (success) {
+          notifications.agendamento.created();
+          form.reset();
+        } else {
+          notifications.error('Erro', 'Falha ao salvar agendamento. Tente novamente.');
+        }
+      } catch (error) {
+        notifications.error('Erro', 'Falha ao salvar agendamento. Tente novamente.');
+      }
+    }
   });
 
-  const espacosAtivos = espacos.filter(e => e.ativo);
+  const validateBusinessRules = (values: AgendamentoFormData): string[] => {
+    const errors: string[] = [];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.espacoId || !formData.data || !formData.horaInicio || !formData.horaFim) {
-      toast({
-        title: "Erro",
-        description: "Todos os campos obrigatórios devem ser preenchidos",
-        variant: "destructive",
-      });
-      return;
+    // Verificar segurança dos dados de entrada
+    const securityCheck = SecurityValidations.validateUserInput(values);
+    if (!securityCheck.isValid) {
+      errors.push(...securityCheck.errors);
     }
 
-    if (formData.horaInicio >= formData.horaFim) {
-      toast({
-        title: "Erro",
-        description: "A hora de início deve ser anterior à hora de fim",
-        variant: "destructive",
-      });
-      return;
+    // Validar usuário ativo
+    const usuarioError = BusinessValidations.validateUsuarioAtivo(usuario!.id, usuarios);
+    if (usuarioError) errors.push(usuarioError);
+
+    // Validar disponibilidade do espaço
+    const espacoError = BusinessValidations.validateEspacoDisponivel(values.espacoId, espacos);
+    if (espacoError) errors.push(espacoError);
+
+    // Validar data
+    const dataError = BusinessValidations.validateDataAgendamento(values.data);
+    if (dataError) errors.push(dataError);
+
+    // Validar sequência de aulas
+    const aulasError = BusinessValidations.validateAulasSequencia(values.aulaInicio, values.aulaFim);
+    if (aulasError) errors.push(aulasError);
+
+    // Validar horário comercial
+    const horarioError = BusinessValidations.validateHorarioComercial(values.aulaInicio, values.aulaFim);
+    if (horarioError) errors.push(horarioError);
+
+    // Validar conflito com agendamentos fixos
+    const conflitoFixoError = BusinessValidations.validateAgendamentoFixoConflict(
+      {
+        espacoId: values.espacoId,
+        data: values.data,
+        aulaInicio: values.aulaInicio,
+        aulaFim: values.aulaFim
+      },
+      agendamentosFixos
+    );
+    if (conflitoFixoError) errors.push(conflitoFixoError);
+
+    // Validar conflito com agendamentos existentes
+    const conflitoError = BusinessValidations.validateAgendamentoConflict(
+      {
+        espacoId: values.espacoId,
+        data: values.data,
+        aulaInicio: values.aulaInicio,
+        aulaFim: values.aulaFim
+      },
+      agendamentos
+    );
+    if (conflitoError) errors.push(conflitoError);
+
+    return errors;
+  };
+
+  // Verificar se o horário está disponível para preview
+  const isHorarioDisponivel = useMemo(() => {
+    if (!form.values.espacoId || !form.values.data || !form.values.aulaInicio || !form.values.aulaFim) {
+      return true; // Não mostrar erro até ter dados completos
     }
 
-    // Verificar conflitos de horário
-    const conflito = agendamentos.find(a => 
-      a.espacoId === parseInt(formData.espacoId) &&
-      a.data === formData.data &&
-      a.status !== 'rejeitado' &&
-      ((formData.horaInicio >= a.horaInicio && formData.horaInicio < a.horaFim) ||
-       (formData.horaFim > a.horaInicio && formData.horaFim <= a.horaFim) ||
-       (formData.horaInicio <= a.horaInicio && formData.horaFim >= a.horaFim))
+    return BusinessValidations.isHorarioDisponivel(
+      form.values.espacoId,
+      form.values.data,
+      form.values.aulaInicio,
+      form.values.aulaFim,
+      agendamentos,
+      agendamentosFixos
+    );
+  }, [form.values.espacoId, form.values.data, form.values.aulaInicio, form.values.aulaFim, agendamentos, agendamentosFixos]);
+
+  // Obter conflitos para exibição
+  const conflicts = useMemo(() => {
+    if (!form.values.espacoId || !form.values.data || !form.values.aulaInicio || !form.values.aulaFim) {
+      return { agendamentosConflitantes: [], agendamentosFixosConflitantes: [], hasConflicts: false };
+    }
+
+    return BusinessValidations.getAgendamentoConflicts(
+      form.values,
+      agendamentos,
+      agendamentosFixos
+    );
+  }, [form.values, agendamentos, agendamentosFixos]);
+
+
+
+  // Obter estatísticas para o PageHeader
+  const pageStats = useMemo(() => {
+    const hoje = new Date().toISOString().split('T')[0];
+    const meusAgendamentosHoje = agendamentos.filter(a => 
+      a.usuarioId === usuario?.id && a.data === hoje && a.status !== 'rejeitado'
     );
 
-    if (conflito) {
-      toast({
-        title: "Erro",
-        description: "Já existe um agendamento para este espaço neste horário",
-        variant: "destructive",
-      });
-      return;
-    }
+    return [
+      {
+        label: "Espaços Disponíveis",
+        value: espacosAtivos.length,
+        icon: Building2,
+        color: "bg-blue-100"
+      },
+      {
+        label: "Meus Agendamentos Hoje",
+        value: meusAgendamentosHoje.length,
+        icon: Calendar,
+        color: "bg-green-100"
+      },
+      {
+        label: "Total de Agendamentos",
+        value: agendamentos.filter(a => a.usuarioId === usuario?.id).length,
+        icon: Clock,
+        color: "bg-purple-100"
+      }
+    ];
+  }, [espacosAtivos, agendamentos, usuario]);
 
-    const newId = Math.max(...agendamentos.map(a => a.id), 0) + 1;
-    const novoAgendamento: Agendamento = {
-      id: newId,
-      espacoId: parseInt(formData.espacoId),
-      usuarioId: usuario!.id,
-      data: formData.data,
-      horaInicio: formData.horaInicio,
-      horaFim: formData.horaFim,
-      status: 'pendente',
-      observacoes: formData.observacoes,
-      criadoEm: new Date().toISOString()
-    };
+  if (loading) return <LoadingSpinner message="Carregando..." />;
 
-    updateAgendamentos([...agendamentos, novoAgendamento]);
-    
-    toast({
-      title: "Sucesso",
-      description: "Agendamento criado com sucesso! Aguarde a aprovação.",
-    });
+  if (!usuario) {
+    return <ErrorState message="Usuário não autenticado" />;
+  }
 
-    // Limpar formulário
-    setFormData({
-      espacoId: '',
-      data: '',
-      horaInicio: '',
-      horaFim: '',
-      observacoes: ''
-    });
-  };
-
-  const getEspacoInfo = (espacoId: string) => {
-    const espaco = espacos.find(e => e.id === parseInt(espacoId));
-    return espaco;
-  };
-
-  const getAgendamentosEspaco = (espacoId: string, data: string) => {
-    return agendamentos.filter(a => 
-      a.espacoId === parseInt(espacoId) && 
-      a.data === data && 
-      a.status !== 'rejeitado'
-    );
-  };
+  if (!usuario.ativo) {
+    return <ErrorState message="Sua conta está desativada. Entre em contato com o administrador." />;
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Novo Agendamento</h1>
-        <p className="text-gray-600 mt-2">Agende um espaço para sua reunião ou evento</p>
-      </div>
+    <div className="space-y-6 p-6">
+      <PageHeader 
+        title="Novo Agendamento"
+        subtitle="Solicite um novo agendamento de espaço"
+        icon={Plus}
+        stats={pageStats}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Dados do Agendamento
-            </CardTitle>
-            <CardDescription>
-              Preencha as informações para seu agendamento
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="espaco">Espaço *</Label>
-                <select 
-                  id="espaco"
-                  value={formData.espacoId}
-                  onChange={(e) => setFormData({...formData, espacoId: e.target.value})}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  required
+        {/* Formulário Principal */}
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Dados do Agendamento
+              </CardTitle>
+              <CardDescription>
+                Preencha os dados para solicitar seu agendamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={form.handleSubmit} className="space-y-6">
+                {/* Seleção de Espaço */}
+                <div className="space-y-2">
+                  <Label htmlFor="espacoId" className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    Espaço *
+                  </Label>
+                  <Select 
+                    value={form.values.espacoId.toString()} 
+                    onValueChange={(value) => form.setValue('espacoId', parseInt(value))}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Selecione um espaço" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {espacosAtivos.map(espaco => (
+                        <SelectItem key={espaco.id} value={espaco.id.toString()}>
+                          <div className="flex items-center justify-between w-full">
+                            <div>
+                              <div className="font-medium">{espaco.nome}</div>
+                              <div className="text-sm text-gray-500">
+                                {espaco.capacidade} pessoas • {espaco.equipamentos?.length || 0} equipamentos
+                              </div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Data e Horário em Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Data */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Data do Agendamento *
+                    </Label>
+                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={`h-12 w-full justify-start text-left font-normal ${
+                            !form.values.data && "text-muted-foreground"
+                          }`}
+                        >
+                          <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span className="truncate">
+                            {form.values.data ? (
+                              new Date(form.values.data + 'T12:00:00').toLocaleDateString('pt-BR', {
+                                weekday: 'short',
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+                            ) : (
+                              "Selecione uma data"
+                            )}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={form.values.data ? new Date(form.values.data + 'T12:00:00') : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+                              form.setValue('data', localDate.toISOString().split('T')[0]);
+                              setCalendarOpen(false);
+                            }
+                          }}
+                          fromDate={new Date()}
+                          toDate={new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Aula Início */}
+                  <div className="space-y-2">
+                    <Label htmlFor="aulaInicio" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Aula Início *
+                    </Label>
+                    <Select 
+                      value={form.values.aulaInicio.toString()} 
+                      onValueChange={(value) => form.setValue('aulaInicio', parseInt(value) as NumeroAula)}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAulaOptions().map(aula => (
+                          <SelectItem key={aula.value} value={aula.value.toString()}>
+                            {aula.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Aula Fim */}
+                  <div className="space-y-2">
+                    <Label htmlFor="aulaFim" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Aula Fim *
+                    </Label>
+                    <Select 
+                      value={form.values.aulaFim.toString()} 
+                      onValueChange={(value) => form.setValue('aulaFim', parseInt(value) as NumeroAula)}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getAulaOptions().map(aula => (
+                          <SelectItem key={aula.value} value={aula.value.toString()}>
+                            {aula.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Observações */}
+                <div className="space-y-2">
+                  <Label htmlFor="observacoes">Observações</Label>
+                  <Textarea
+                    id="observacoes"
+                    placeholder="Descreva o propósito do agendamento..."
+                    value={form.values.observacoes}
+                    onChange={(e) => form.setValue('observacoes', e.target.value)}
+                    maxLength={500}
+                    className="min-h-[100px] resize-none"
+                  />
+                  <div className="text-sm text-muted-foreground">
+                    {form.values.observacoes.length}/500 caracteres
+                  </div>
+                </div>
+
+                {/* Alertas de Status */}
+                {!isHorarioDisponivel && form.values.espacoId && form.values.data && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Este horário não está disponível. Verifique os conflitos na seção lateral.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+
+
+                {isHorarioDisponivel && form.values.espacoId && form.values.data && (
+                  <Alert>
+                    <CheckCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Horário disponível! Você pode prosseguir com o agendamento.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-base" 
+                  disabled={!isHorarioDisponivel}
                 >
-                  <option value="">Selecione um espaço</option>
-                  {espacosAtivos.map((espaco) => (
-                    <option key={espaco.id} value={espaco.id}>
-                      {espaco.nome} (Capacidade: {espaco.capacidade} pessoas)
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Solicitar Agendamento
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="data">Data *</Label>
-                <Input
-                  id="data"
-                  type="date"
-                  value={formData.data}
-                  onChange={(e) => setFormData({...formData, data: e.target.value})}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
+        {/* Sidebar com Informações */}
+        <div className="space-y-6">
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="horaInicio">Hora Início *</Label>
-                  <Input
-                    id="horaInicio"
-                    type="time"
-                    value={formData.horaInicio}
-                    onChange={(e) => setFormData({...formData, horaInicio: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="horaFim">Hora Fim *</Label>
-                  <Input
-                    id="horaFim"
-                    type="time"
-                    value={formData.horaFim}
-                    onChange={(e) => setFormData({...formData, horaFim: e.target.value})}
-                    required
-                  />
-                </div>
-              </div>
+          {/* Grade de Horários */}
+          {form.values.espacoId && form.values.data && (
+            <HorarioGrid
+              espacoId={form.values.espacoId}
+              data={form.values.data}
+              agendamentos={agendamentos}
+              agendamentosFixos={agendamentosFixos}
+            />
+          )}
 
-              <div className="grid gap-2">
-                <Label htmlFor="observacoes">Observações</Label>
-                <textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
-                  placeholder="Descreva o propósito da reunião ou evento"
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-              </div>
-
-              <Button type="submit" className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Agendamento
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4">
-          {formData.espacoId && (
+          {/* Conflitos Detectados */}
+          {conflicts.hasConflicts && (
             <Card>
               <CardHeader>
-                <CardTitle>Informações do Espaço</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base text-red-600">
+                  <AlertTriangle className="h-4 w-4" />
+                  Conflitos Detectados
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                {(() => {
-                  const espaco = getEspacoInfo(formData.espacoId);
-                  return espaco ? (
-                    <div className="space-y-2">
-                      <p><strong>Nome:</strong> {espaco.nome}</p>
-                      <p><strong>Capacidade:</strong> {espaco.capacidade} pessoas</p>
-                      {espaco.descricao && (
-                        <p><strong>Descrição:</strong> {espaco.descricao}</p>
-                      )}
-                      {espaco.equipamentos && espaco.equipamentos.length > 0 && (
-                        <div>
-                          <strong>Equipamentos:</strong>
-                          <ul className="list-disc list-inside mt-1">
-                            {espaco.equipamentos.map((eq, index) => (
-                              <li key={index}>{eq}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+              <CardContent className="space-y-3">
+                {conflicts.agendamentosFixosConflitantes.map(af => (
+                  <div key={af.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
+                    <div className="text-sm font-medium text-red-800">Agendamento Fixo</div>
+                    <div className="text-xs text-red-600 mt-1">
+                      {formatAulas(af.aulaInicio as NumeroAula, af.aulaFim as NumeroAula)}
+                      {af.observacoes && ` - ${af.observacoes}`}
                     </div>
-                  ) : null;
-                })()}
+                  </div>
+                ))}
+                
+                {conflicts.agendamentosConflitantes.map(a => {
+                  const usuarioConflito = usuarios.find(u => u.id === a.usuarioId);
+                  return (
+                    <div key={a.id} className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <div className="text-sm font-medium text-amber-800">
+                        Agendamento {a.status === 'aprovado' ? 'Aprovado' : 'Pendente'}
+                      </div>
+                      <div className="text-xs text-amber-600 mt-1">
+                        {usuarioConflito?.nome} - {formatAulas(a.aulaInicio as NumeroAula, a.aulaFim as NumeroAula)}
+                      </div>
+                    </div>
+                  );
+                })}
               </CardContent>
             </Card>
           )}
 
-          {formData.espacoId && formData.data && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Agendamentos do Dia</CardTitle>
-                <CardDescription>
-                  Horários já ocupados para {new Date(formData.data).toLocaleDateString('pt-BR')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {(() => {
-                  const agendamentosEspaco = getAgendamentosEspaco(formData.espacoId, formData.data);
-                  return agendamentosEspaco.length > 0 ? (
-                    <div className="space-y-2">
-                      {agendamentosEspaco.map((agendamento) => (
-                        <div 
-                          key={agendamento.id} 
-                          className="p-2 bg-red-50 border border-red-200 rounded text-sm"
-                        >
-                          <strong>{agendamento.horaInicio} - {agendamento.horaFim}</strong>
-                          <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                            agendamento.status === 'aprovado' 
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            {agendamento.status}
-                          </span>
-                        </div>
-                      ))}
+          {/* Informações do Espaço Selecionado */}
+          {form.values.espacoId && (
+            (() => {
+              const espacoSelecionado = espacos.find(e => e.id === form.values.espacoId);
+              return espacoSelecionado ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Info className="h-4 w-4" />
+                      Detalhes do Espaço
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <div className="text-sm font-medium">{espacoSelecionado.nome}</div>
+                      {espacoSelecionado.descricao && (
+                        <div className="text-xs text-muted-foreground mt-1">{espacoSelecionado.descricao}</div>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-gray-500">Nenhum agendamento para este dia</p>
-                  );
-                })()}
-              </CardContent>
-            </Card>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Capacidade:</span>
+                      <Badge variant="outline">{espacoSelecionado.capacidade} pessoas</Badge>
+                    </div>
+                    {espacoSelecionado.equipamentos && espacoSelecionado.equipamentos.length > 0 && (
+                      <div>
+                        <div className="text-sm text-muted-foreground mb-2">Equipamentos:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {espacoSelecionado.equipamentos.map((eq, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {eq}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ) : null;
+            })()
           )}
         </div>
       </div>

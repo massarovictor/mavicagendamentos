@@ -4,10 +4,10 @@ import { Usuario, Espaco, Agendamento, AgendamentoFixo } from '@/types';
 
 const INITIAL_DATA = {
   usuarios: [
-    { id: 1, nome: 'Administrador', tipo: 'admin' as const, email: 'admin@sistema.com' },
-    { id: 2, nome: 'Gestor Principal', tipo: 'gestor' as const, espacos: [1, 2], email: 'gestor@sistema.com' },
-    { id: 3, nome: 'João Silva', tipo: 'usuario' as const, email: 'joao@email.com' },
-    { id: 4, nome: 'Maria Santos', tipo: 'usuario' as const, email: 'maria@email.com' }
+    { id: 1, nome: 'Administrador', tipo: 'admin' as const, email: 'admin@sistema.com', senha: 'admin123', ativo: true },
+    { id: 2, nome: 'Gestor Principal', tipo: 'gestor' as const, espacos: [1, 2], email: 'gestor@sistema.com', senha: 'gestor123', ativo: true },
+    { id: 3, nome: 'João Silva', tipo: 'usuario' as const, email: 'joao@email.com', senha: 'usuario123', ativo: true },
+    { id: 4, nome: 'Maria Santos', tipo: 'usuario' as const, email: 'maria@email.com', senha: 'usuario123', ativo: true }
   ],
   espacos: [
     { id: 1, nome: 'Sala de Reunião A', capacidade: 8, descricao: 'Sala com projetor e ar condicionado', equipamentos: ['Projetor', 'TV', 'Ar condicionado'], ativo: true },
