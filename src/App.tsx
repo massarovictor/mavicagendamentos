@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,109 +30,122 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />} 
+      <Route
+        path="/login"
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />}
       />
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/espacos" 
+      <Route
+        path="/espacos"
         element={
           <ProtectedRoute>
             <GerenciarEspacos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/usuarios" 
+      <Route
+        path="/usuarios"
         element={
           <ProtectedRoute>
             <GerenciarUsuarios />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/todos-agendamentos" 
+      <Route
+        path="/todos-agendamentos"
         element={
           <ProtectedRoute>
             <TodosAgendamentos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/novo-agendamento" 
+      <Route
+        path="/novo-agendamento"
         element={
           <ProtectedRoute>
             <NovoAgendamento />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/meus-agendamentos" 
+      <Route
+        path="/meus-agendamentos"
         element={
           <ProtectedRoute>
             <MeusAgendamentos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/meus-espacos" 
+      <Route
+        path="/meus-espacos"
         element={
           <ProtectedRoute>
             <MeusEspacos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/aprovar-agendamentos" 
+      <Route
+        path="/aprovar-agendamentos"
         element={
           <ProtectedRoute>
             <AprovarAgendamentos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/espacos-disponiveis" 
+      <Route
+        path="/espacos-disponiveis"
         element={
           <ProtectedRoute>
             <EspacosDisponiveis />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/agendamentos-fixos" 
+      <Route
+        path="/agendamentos-fixos"
         element={
           <ProtectedRoute>
             <AgendamentosFixos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/debug" 
+      <Route
+        path="/debug"
         element={
           <ProtectedRoute>
             <Debug />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/" 
-        element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />} 
+      <Route
+        path="/"
+        element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />}
       />
-      <Route 
-        path="*" 
-        element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />} 
+      <Route
+        path="*"
+        element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />}
       />
     </Routes>
   );
 };
+
+// Aplica o tema salvo/localStorage na inicialização
+if (typeof window !== "undefined") {
+  const saved = localStorage.getItem("theme");
+  if (
+    saved === "dark" ||
+    (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)
+  ) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
