@@ -375,10 +375,10 @@ export class BusinessValidations {
       return 'Agendamentos só podem ser feitos com até 6 meses de antecedência';
     }
 
-    // Verificar dias úteis (opcional - pode ser configurável)
+    // Verificar dias úteis - agora permite sábados
     const diaSemana = dataAgendamento.getDay();
-    if (diaSemana === 0 || diaSemana === 6) {
-      return 'Agendamentos não são permitidos em finais de semana';
+    if (diaSemana === 0) {
+      return 'Agendamentos não são permitidos aos domingos';
     }
     
     return null;
@@ -397,7 +397,7 @@ export class BusinessValidations {
       return 'Aula de início deve ser anterior ou igual à aula de fim';
     }
     
-
+    // Removida restrição de duração máxima - agora permite qualquer quantidade de aulas consecutivas
     
     return null;
   }
