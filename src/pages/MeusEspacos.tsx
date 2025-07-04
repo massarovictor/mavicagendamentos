@@ -70,25 +70,25 @@ const MeusEspacos = () => {
       label: 'Total de Espaços',
       value: meusEspacos.length,
       icon: Building2,
-      color: 'bg-purple-100'
+      color: 'bg-purple-500'
     },
     {
       label: 'Agendamentos',
       value: totalStats.totalAgendamentos,
       icon: Calendar,
-      color: 'bg-blue-100'
+      color: 'bg-blue-500'
     },
     {
       label: 'Pendentes',
       value: totalStats.totalPendentes,
       icon: Clock,
-      color: 'bg-orange-100'
+      color: 'bg-orange-500'
     },
     {
       label: 'Capacidade Total',
       value: totalStats.totalCapacidade,
       icon: Users,
-      color: 'bg-green-100'
+      color: 'bg-green-500'
     }
   ];
 

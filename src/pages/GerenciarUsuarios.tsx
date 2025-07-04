@@ -98,25 +98,25 @@ const GerenciarUsuarios = () => {
         label: 'Total de Usuários',
         value: usuarios.length,
         icon: Users,
-        color: 'bg-blue-100'
+        color: 'bg-blue-500'
       },
       {
         label: 'Administradores',
         value: usuarios.filter(u => u.tipo === 'admin').length,
         icon: Shield,
-        color: 'bg-red-100'
+        color: 'bg-red-500'
       },
       {
         label: 'Gestores',
         value: usuarios.filter(u => u.tipo === 'gestor').length,
         icon: Eye,
-        color: 'bg-purple-100'
+        color: 'bg-purple-500'
       },
       {
         label: 'Usuários Ativos',
         value: usuarios.filter(u => u.ativo).length,
         icon: User,
-        color: 'bg-green-100'
+        color: 'bg-green-500'
       }
     ];
   }, [usuarios]);
@@ -130,6 +130,9 @@ const GerenciarUsuarios = () => {
       senha: '',
       espacos: []
     },
+    persistenceKey: editingUsuario 
+      ? `form-usuario-${editingUsuario.id}` 
+      : 'form-novo-usuario',
     onSubmit: async (values) => {
       // Validações de formulário
       const formErrors = validateForm(values);
@@ -173,6 +176,7 @@ const GerenciarUsuarios = () => {
         notifications.usuario.created();
       }
 
+      form.clearPersistence(); // Limpa o localStorage após o sucesso
       setIsDialogOpen(false);
       resetForm();
     }
@@ -208,13 +212,6 @@ const GerenciarUsuarios = () => {
 
   const resetForm = () => {
     form.reset();
-    form.setValues({
-      nome: '',
-      email: '',
-      tipo: 'usuario',
-      senha: '',
-      espacos: []
-    });
     setEditingUsuario(null);
   };
 
@@ -229,6 +226,18 @@ const GerenciarUsuarios = () => {
     });
     setIsDialogOpen(true);
   };
+
+  const handleCloseDialog = () => {
+    if (form.isDirty) {
+      // Idealmente, um modal de confirmação apareceria aqui
+      // "Você tem alterações não salvas, deseja descartá-las?"
+      // Por simplicidade, vamos apenas limpar a persistência
+      console.log("Formulário com alterações não salvas sendo fechado.");
+    }
+    // Não limpa a persistência ao fechar, permitindo que o usuário continue depois
+    setIsDialogOpen(false);
+    resetForm();
+  }
 
   const handleToggleStatus = async (usuarioId: number, ativo: boolean) => {
     const usuario = usuarios.find(u => u.id === usuarioId);
@@ -266,10 +275,10 @@ const GerenciarUsuarios = () => {
 
     try {
       await actions.toggleUsuarioStatus(usuarioId, ativo);
-      if (ativo) {
-        notifications.usuario.activated();
-      } else {
-        notifications.usuario.deactivated();
+    if (ativo) {
+      notifications.usuario.activated();
+    } else {
+      notifications.usuario.deactivated();
       }
     } catch (error) {
       notifications.error("Erro", "Falha ao alterar status do usuário");
@@ -360,7 +369,16 @@ const GerenciarUsuarios = () => {
         icon={Users}
         stats={pageStats}
         actions={
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog 
+            open={isDialogOpen} 
+            onOpenChange={(open) => {
+              if (!open) {
+                handleCloseDialog();
+              } else {
+                setIsDialogOpen(true);
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button onClick={resetForm} className="flex items-center gap-2 hover:shadow-lg transition-shadow">
                 <UserPlus className="h-4 w-4" />
@@ -370,7 +388,7 @@ const GerenciarUsuarios = () => {
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>
-                  {editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}
+                  {editingUsuario ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
                 </DialogTitle>
                 <DialogDescription>
                   Preencha as informações do usuário abaixo.
@@ -608,7 +626,7 @@ const GerenciarUsuarios = () => {
                 key: 'email',
                 header: 'Email',
                 accessor: (usuario) => (
-                  <div className="text-sm text-gray-600">{usuario.email}</div>
+                        <div className="text-sm text-gray-600">{usuario.email}</div>
                 ),
                 mobileLabel: 'Email',
                 hiddenOnMobile: true
@@ -617,8 +635,8 @@ const GerenciarUsuarios = () => {
                 key: 'tipo',
                 header: 'Tipo',
                 accessor: (usuario) => (
-                  <Badge className={getTipoColor(usuario.tipo)}>
-                    {getTipoLabel(usuario.tipo)}
+                        <Badge className={getTipoColor(usuario.tipo)}>
+                          {getTipoLabel(usuario.tipo)}
                   </Badge>
                 ),
                 mobileLabel: 'Tipo'
@@ -653,9 +671,9 @@ const GerenciarUsuarios = () => {
                 key: 'status',
                 header: 'Status',
                 accessor: (usuario) => (
-                  <Badge variant={usuario.ativo ? "default" : "secondary"}>
-                    {usuario.ativo ? 'Ativo' : 'Inativo'}
-                  </Badge>
+                        <Badge variant={usuario.ativo ? "default" : "secondary"}>
+                          {usuario.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
                 ),
                 mobileLabel: 'Status'
               },
@@ -663,9 +681,9 @@ const GerenciarUsuarios = () => {
                 key: 'agendamentos',
                 header: 'Agendamentos',
                 accessor: (usuario) => (
-                  <span className="text-sm text-gray-600">
-                    {getAgendamentosCount(usuario.id)} agendamentos
-                  </span>
+                        <span className="text-sm text-gray-600">
+                          {getAgendamentosCount(usuario.id)} agendamentos
+                        </span>
                 ),
                 mobileLabel: 'Agendamentos',
                 hiddenOnMobile: true
@@ -674,23 +692,23 @@ const GerenciarUsuarios = () => {
                 key: 'acoes',
                 header: 'Ações',
                 accessor: (usuario) => (
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(usuario)}
-                      className="hover:bg-blue-50 hover:border-blue-200"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleToggleStatus(usuario.id, !usuario.ativo)}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(usuario)}
+                            className="hover:bg-blue-50 hover:border-blue-200"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleStatus(usuario.id, !usuario.ativo)}
                       className={usuario.ativo ? 'hover:bg-yellow-50 hover:border-yellow-200' : 'hover:bg-green-50 hover:border-green-200'}
-                    >
-                      {usuario.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
+                          >
+                            {usuario.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -757,11 +775,11 @@ const GerenciarUsuarios = () => {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Espaços gerenciados:</span>
                       <span className="font-medium">{usuarioToDelete.espacos.length}</span>
-                    </div>
-                  )}
+                        </div>
+                )}
                 </div>
-              </div>
-              
+          </div>
+
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <div className="flex items-center gap-2 text-yellow-800">
                   <AlertTriangle className="h-4 w-4" />

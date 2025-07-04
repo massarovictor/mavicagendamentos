@@ -73,25 +73,25 @@ const TodosAgendamentos = () => {
         label: 'Total',
         value: agendamentos.length,
         icon: Calendar,
-        color: 'bg-blue-100'
+        color: 'bg-blue-500'
       },
       {
         label: 'Hoje',
         value: agendamentosHoje.length,
         icon: Clock,
-        color: 'bg-green-100'
+        color: 'bg-green-500'
       },
       {
         label: 'Pendentes',
         value: pendentes.length,
         icon: AlertCircle,
-        color: 'bg-yellow-100'
+        color: 'bg-yellow-500'
       },
       {
         label: 'Aprovados',
         value: aprovados.length,
         icon: Check,
-        color: 'bg-emerald-100'
+        color: 'bg-emerald-500'
       }
     ];
   }, [agendamentos]);
@@ -99,10 +99,10 @@ const TodosAgendamentos = () => {
   const handleStatusChange = async (agendamentoId: number, novoStatus: 'aprovado' | 'rejeitado') => {
     try {
       await actions.updateAgendamentoStatus(agendamentoId, novoStatus);
-      if (novoStatus === 'aprovado') {
-        notifications.agendamento.approved();
-      } else {
-        notifications.agendamento.rejected();
+    if (novoStatus === 'aprovado') {
+      notifications.agendamento.approved();
+    } else {
+      notifications.agendamento.rejected();
       }
     } catch (error) {
       notifications.error("Erro", "Falha ao atualizar status do agendamento");
@@ -246,9 +246,9 @@ const TodosAgendamentos = () => {
                 key: 'status',
                 header: 'Status',
                 accessor: (agendamento) => (
-                  <Badge className={getStatusColor(agendamento.status)} variant="outline">
-                    {getStatusLabel(agendamento.status)}
-                  </Badge>
+                        <Badge className={getStatusColor(agendamento.status)} variant="outline">
+                          {getStatusLabel(agendamento.status)}
+                        </Badge>
                 ),
                 mobileLabel: 'Status'
               },
@@ -256,9 +256,9 @@ const TodosAgendamentos = () => {
                 key: 'observacoes',
                 header: 'Observações',
                 accessor: (agendamento) => (
-                  <span className="text-sm text-gray-600 truncate block max-w-[150px]" title={agendamento.observacoes}>
-                    {agendamento.observacoes || '-'}
-                  </span>
+                        <span className="text-sm text-gray-600 truncate block max-w-[150px]" title={agendamento.observacoes}>
+                          {agendamento.observacoes || '-'}
+                        </span>
                 ),
                 mobileLabel: 'Observações',
                 hiddenOnMobile: true
@@ -268,31 +268,31 @@ const TodosAgendamentos = () => {
                 header: 'Ações',
                 accessor: (agendamento) => (
                   <>
-                    {agendamento.status === 'pendente' && (
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleStatusChange(agendamento.id, 'aprovado')}
-                          className="hover:bg-green-50 hover:border-green-200 text-green-600 hover:text-green-700"
-                        >
-                          <Check className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleStatusChange(agendamento.id, 'rejeitado')}
-                          className="hover:bg-red-50 hover:border-red-200 text-red-600 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                    {agendamento.status !== 'pendente' && (
-                      <span className="text-sm text-gray-500">
-                        {agendamento.status === 'aprovado' ? 'Aprovado' : 'Rejeitado'}
-                      </span>
-                    )}
+                        {agendamento.status === 'pendente' && (
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleStatusChange(agendamento.id, 'aprovado')}
+                              className="hover:bg-green-50 hover:border-green-200 text-green-600 hover:text-green-700"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleStatusChange(agendamento.id, 'rejeitado')}
+                              className="hover:bg-red-50 hover:border-red-200 text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        {agendamento.status !== 'pendente' && (
+                          <span className="text-sm text-gray-500">
+                            {agendamento.status === 'aprovado' ? 'Aprovado' : 'Rejeitado'}
+                          </span>
+                        )}
                   </>
                 ),
                 mobileLabel: 'Ações'
@@ -305,7 +305,7 @@ const TodosAgendamentos = () => {
                   <p className="font-medium">Nenhum agendamento encontrado</p>
                   <p className="text-sm">Tente ajustar os filtros ou criar um novo agendamento</p>
                 </div>
-              </div>
+          </div>
             }
           />
         </CardContent>

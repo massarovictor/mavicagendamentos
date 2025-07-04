@@ -30,6 +30,43 @@ interface AgendamentoFormData {
   observacoes: string;
 }
 
+// Validação de formulário
+const validateForm = (values: AgendamentoFormData) => {
+  const errors: Record<string, string> = {};
+
+  // Validar espaço
+  if (!values.espacoId || values.espacoId === 0) {
+    errors.espacoId = 'Selecione um espaço';
+  }
+
+  // Validar data
+  if (!values.data) {
+    errors.data = 'Selecione uma data';
+  }
+
+  // Validar aula início
+  if (!values.aulaInicio || values.aulaInicio < 1 || values.aulaInicio > 9) {
+    errors.aulaInicio = 'Selecione uma aula de início válida';
+  }
+
+  // Validar aula fim
+  if (!values.aulaFim || values.aulaFim < 1 || values.aulaFim > 9) {
+    errors.aulaFim = 'Selecione uma aula de fim válida';
+  }
+
+  // Validar sequência de aulas
+  if (values.aulaInicio && values.aulaFim && values.aulaInicio > values.aulaFim) {
+    errors.aulaFim = 'A aula de fim deve ser posterior à aula de início';
+  }
+
+  // Validar observações (opcional, mas se preenchidas não podem ser só espaços)
+  if (values.observacoes && values.observacoes.trim().length === 0) {
+    errors.observacoes = 'Observações não podem ser apenas espaços em branco';
+  }
+
+  return errors;
+};
+
 const NovoAgendamento = () => {
   const { espacos, agendamentos, agendamentosFixos, usuarios, loading, actions } = useSupabaseData();
   const { usuario } = useAuth();
@@ -60,7 +97,15 @@ const NovoAgendamento = () => {
       aulaFim: 1,
       observacoes: ''
     },
+    persistenceKey: 'form-novo-agendamento',
     onSubmit: async (values) => {
+      // Validações de formulário
+      const formErrors = validateForm(values);
+      if (Object.keys(formErrors).length > 0) {
+        Object.values(formErrors).forEach(error => notifications.error('Erro de validação', error));
+        return;
+      }
+
       // Verificação de rate limiting
       const rateLimitKey = `user_${usuario!.id}_${new Date().toDateString()}`;
       if (!SecurityValidations.rateLimit(rateLimitKey, 10)) {
@@ -94,8 +139,6 @@ const NovoAgendamento = () => {
         return;
       }
 
-
-
       try {
         // Criar agendamento
         const novoAgendamento: Agendamento = {
@@ -113,6 +156,7 @@ const NovoAgendamento = () => {
         const success = await actions.addAgendamento(novoAgendamento);
         if (success) {
           notifications.agendamento.created();
+          form.clearPersistence(); // Limpa o localStorage
           form.reset();
         } else {
           notifications.error('Erro', 'Falha ao salvar agendamento. Tente novamente.');
@@ -208,8 +252,6 @@ const NovoAgendamento = () => {
     );
   }, [form.values, agendamentos, agendamentosFixos]);
 
-
-
   // Obter estatísticas para o PageHeader
   const pageStats = useMemo(() => {
     const hoje = new Date().toISOString().split('T')[0];
@@ -222,19 +264,19 @@ const NovoAgendamento = () => {
         label: "Espaços Disponíveis",
         value: espacosAtivos.length,
         icon: Building2,
-        color: "bg-blue-100"
+        color: "bg-blue-500"
       },
       {
         label: "Meus Agendamentos Hoje",
         value: meusAgendamentosHoje.length,
         icon: Calendar,
-        color: "bg-green-100"
+        color: "bg-green-500"
       },
       {
         label: "Total de Agendamentos",
         value: agendamentos.filter(a => a.usuarioId === usuario?.id).length,
         icon: Clock,
-        color: "bg-purple-100"
+        color: "bg-purple-500"
       }
     ];
   }, [espacosAtivos, agendamentos, usuario]);
@@ -250,7 +292,7 @@ const NovoAgendamento = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <PageHeader 
         title="Novo Agendamento"
         subtitle="Solicite um novo agendamento de espaço"
@@ -258,78 +300,75 @@ const NovoAgendamento = () => {
         stats={pageStats}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Formulário Principal */}
         <div>
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Dados do Agendamento
-              </CardTitle>
-              <CardDescription>
-                Preencha os dados para solicitar seu agendamento
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={form.handleSubmit} className="space-y-6">
-                {/* Seleção de Espaço */}
-                <div className="space-y-2">
-                  <Label htmlFor="espacoId" className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+                <Calendar className="h-4 w-4" />
+              Novo Agendamento
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+              <form onSubmit={form.handleSubmit} className="space-y-4">
+              {/* Seleção de Espaço */}
+                <div className="space-y-1">
+                  <Label htmlFor="espacoId" className="text-sm font-medium">
                     Espaço *
                   </Label>
-                  <Select 
+                <Select 
                     value={form.values.espacoId.toString()} 
-                    onValueChange={(value) => form.setValue('espacoId', parseInt(value))}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Selecione um espaço" />
-                    </SelectTrigger>
-                    <SelectContent>
+                  onValueChange={(value) => form.setValue('espacoId', parseInt(value))}
+                >
+                    <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Selecione o espaço">
+                      {form.values.espacoId ? 
+                        espacosAtivos.find(e => e.id === form.values.espacoId)?.nome || "Selecione o espaço"
+                        : "Selecione o espaço"
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
                       {espacosAtivos.map(espaco => (
-                        <SelectItem key={espaco.id} value={espaco.id.toString()}>
-                          <div className="flex items-center justify-between w-full">
-                            <div>
-                              <div className="font-medium">{espaco.nome}</div>
-                              <div className="text-sm text-gray-500">
-                                {espaco.capacidade} pessoas • {espaco.equipamentos?.length || 0} equipamentos
-                              </div>
+                      <SelectItem key={espaco.id} value={espaco.id.toString()}>
+                          <div className="w-full">
+                            <div className="font-medium text-left">{espaco.nome}</div>
+                            <div className="text-xs text-gray-500 text-left">
+                              {espaco.capacidade} pessoas
                             </div>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                {/* Data e Horário em Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Data */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Data do Agendamento *
+                                {/* Data e Horário em Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Data */}
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium">
+                      Data *
                     </Label>
                     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className={`h-12 w-full justify-start text-left font-normal ${
+                          className={`h-10 w-full justify-start text-left font-normal ${
                             !form.values.data && "text-muted-foreground"
                           }`}
                         >
-                          <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
-                          <span className="truncate">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          <span className="truncate text-sm">
                             {form.values.data ? (
                               new Date(form.values.data + 'T12:00:00').toLocaleDateString('pt-BR', {
-                                weekday: 'short',
                                 day: '2-digit',
-                                month: 'short',
+                                month: '2-digit',
                                 year: 'numeric',
                               })
                             ) : (
-                              "Selecione uma data"
+                              "Selecionar"
                             )}
                           </span>
                         </Button>
@@ -351,107 +390,84 @@ const NovoAgendamento = () => {
                         />
                       </PopoverContent>
                     </Popover>
-                  </div>
+              </div>
 
                   {/* Aula Início */}
-                  <div className="space-y-2">
-                    <Label htmlFor="aulaInicio" className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Aula Início *
+                  <div className="space-y-1">
+                    <Label htmlFor="aulaInicio" className="text-sm font-medium">
+                      Início *
                     </Label>
-                    <Select 
-                      value={form.values.aulaInicio.toString()} 
-                      onValueChange={(value) => form.setValue('aulaInicio', parseInt(value) as NumeroAula)}
-                    >
-                      <SelectTrigger className="h-12">
+                  <Select 
+                    value={form.values.aulaInicio.toString()} 
+                    onValueChange={(value) => form.setValue('aulaInicio', parseInt(value) as NumeroAula)}
+                  >
+                      <SelectTrigger className="h-10">
                         <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
+                    </SelectTrigger>
+                    <SelectContent>
                         {getAulaOptions().map(aula => (
-                          <SelectItem key={aula.value} value={aula.value.toString()}>
-                            {aula.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                        <SelectItem key={aula.value} value={aula.value.toString()}>
+                          {aula.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                   {/* Aula Fim */}
-                  <div className="space-y-2">
-                    <Label htmlFor="aulaFim" className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Aula Fim *
+                  <div className="space-y-1">
+                    <Label htmlFor="aulaFim" className="text-sm font-medium">
+                      Fim *
                     </Label>
-                    <Select 
-                      value={form.values.aulaFim.toString()} 
-                      onValueChange={(value) => form.setValue('aulaFim', parseInt(value) as NumeroAula)}
-                    >
-                      <SelectTrigger className="h-12">
+                  <Select 
+                    value={form.values.aulaFim.toString()} 
+                    onValueChange={(value) => form.setValue('aulaFim', parseInt(value) as NumeroAula)}
+                  >
+                      <SelectTrigger className="h-10">
                         <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
+                    </SelectTrigger>
+                    <SelectContent>
                         {getAulaOptions().map(aula => (
-                          <SelectItem key={aula.value} value={aula.value.toString()}>
-                            {aula.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                        <SelectItem key={aula.value} value={aula.value.toString()}>
+                          {aula.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
 
-                {/* Observações */}
-                <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    placeholder="Descreva o propósito do agendamento..."
-                    value={form.values.observacoes}
-                    onChange={(e) => form.setValue('observacoes', e.target.value)}
+              {/* Observações */}
+                <div className="space-y-1">
+                <Label htmlFor="observacoes" className="text-sm font-medium">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                    placeholder="Objetivo do agendamento..."
+                  value={form.values.observacoes}
+                  onChange={(e) => form.setValue('observacoes', e.target.value)}
                     maxLength={500}
-                    className="min-h-[100px] resize-none"
-                  />
-                  <div className="text-sm text-muted-foreground">
-                    {form.values.observacoes.length}/500 caracteres
+                    className="min-h-[60px] resize-none text-sm"
+                />
+                  <div className="text-xs text-muted-foreground">
+                    {form.values.observacoes.length}/500
                   </div>
-                </div>
+              </div>
 
-                {/* Alertas de Status */}
-                {!isHorarioDisponivel && form.values.espacoId && form.values.data && (
-                  <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
-                      Este horário não está disponível. Verifique os conflitos na seção lateral.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-
-
-                {isHorarioDisponivel && form.values.espacoId && form.values.data && (
-                  <Alert>
-                    <CheckCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Horário disponível! Você pode prosseguir com o agendamento.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-base" 
+              <Button 
+                type="submit" 
+                  className="w-full h-10" 
                   disabled={!isHorarioDisponivel}
-                >
-                  <Calendar className="h-5 w-5 mr-2" />
-                  Solicitar Agendamento
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Solicitar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
         </div>
 
         {/* Sidebar com Informações */}
-        <div className="space-y-6">
+        <div className="space-y-3">
 
           {/* Grade de Horários */}
           {form.values.espacoId && form.values.data && (
@@ -466,33 +482,34 @@ const NovoAgendamento = () => {
           {/* Conflitos Detectados */}
           {conflicts.hasConflicts && (
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base text-red-600">
                   <AlertTriangle className="h-4 w-4" />
-                  Conflitos Detectados
+                  Conflitos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2 pt-0">
                 {conflicts.agendamentosFixosConflitantes.map(af => (
-                  <div key={af.id} className="p-3 bg-red-50 rounded-lg border border-red-200">
-                    <div className="text-sm font-medium text-red-800">Agendamento Fixo</div>
-                    <div className="text-xs text-red-600 mt-1">
-                      {formatAulas(af.aulaInicio as NumeroAula, af.aulaFim as NumeroAula)}
-                      {af.observacoes && ` - ${af.observacoes}`}
+                  <div key={af.id} className="p-2 bg-red-50 rounded border border-red-200">
+                    <div className="text-sm font-medium text-red-800">
+                      Fixo
                     </div>
-                  </div>
+                    <div className="text-xs text-red-600">
+                      {formatAulas(af.aulaInicio as NumeroAula, af.aulaFim as NumeroAula)}
+                    </div>
+                </div>
                 ))}
                 
                 {conflicts.agendamentosConflitantes.map(a => {
                   const usuarioConflito = usuarios.find(u => u.id === a.usuarioId);
                   return (
-                    <div key={a.id} className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                    <div key={a.id} className="p-2 bg-amber-50 rounded border border-amber-200">
                       <div className="text-sm font-medium text-amber-800">
-                        Agendamento {a.status === 'aprovado' ? 'Aprovado' : 'Pendente'}
-                      </div>
-                      <div className="text-xs text-amber-600 mt-1">
+                        {a.status === 'aprovado' ? 'Aprovado' : 'Pendente'}
+                  </div>
+                      <div className="text-xs text-amber-600">
                         {usuarioConflito?.nome} - {formatAulas(a.aulaInicio as NumeroAula, a.aulaFim as NumeroAula)}
-                      </div>
+                </div>
                     </div>
                   );
                 })}
@@ -506,36 +523,41 @@ const NovoAgendamento = () => {
               const espacoSelecionado = espacos.find(e => e.id === form.values.espacoId);
               return espacoSelecionado ? (
                 <Card>
-                  <CardHeader>
+              <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Info className="h-4 w-4" />
-                      Detalhes do Espaço
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
+                      Espaço
+                </CardTitle>
+              </CardHeader>
+                  <CardContent className="space-y-2 pt-0">
                     <div>
                       <div className="text-sm font-medium">{espacoSelecionado.nome}</div>
                       {espacoSelecionado.descricao && (
-                        <div className="text-xs text-muted-foreground mt-1">{espacoSelecionado.descricao}</div>
+                        <div className="text-xs text-muted-foreground">{espacoSelecionado.descricao}</div>
                       )}
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Capacidade:</span>
-                      <Badge variant="outline">{espacoSelecionado.capacidade} pessoas</Badge>
-                    </div>
+                      <span className="text-xs text-muted-foreground">Capacidade:</span>
+                      <Badge variant="outline" className="text-xs">{espacoSelecionado.capacidade} pessoas</Badge>
+                  </div>
                     {espacoSelecionado.equipamentos && espacoSelecionado.equipamentos.length > 0 && (
                       <div>
-                        <div className="text-sm text-muted-foreground mb-2">Equipamentos:</div>
+                        <div className="text-xs text-muted-foreground mb-1">Equipamentos:</div>
                         <div className="flex flex-wrap gap-1">
-                          {espacoSelecionado.equipamentos.map((eq, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
+                          {espacoSelecionado.equipamentos.slice(0, 3).map((eq, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
                               {eq}
                             </Badge>
                           ))}
+                          {espacoSelecionado.equipamentos.length > 3 && (
+                            <Badge variant="outline" className="text-xs px-1 py-0">
+                              +{espacoSelecionado.equipamentos.length - 3}
+                            </Badge>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </CardContent>
+                  </div>
+                )}
+              </CardContent>
                 </Card>
               ) : null;
             })()

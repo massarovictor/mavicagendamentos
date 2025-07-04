@@ -176,19 +176,19 @@ const AgendamentosFixos = () => {
       label: "Total Fixos",
       value: agendamentosFixosFiltrados.length,
       icon: Calendar,
-      color: "bg-blue-100"
+      color: "bg-blue-500"
     },
     {
       label: "Espaços Utilizados",
       value: new Set(agendamentosFixosFiltrados.map(af => af.espacoId)).size,
       icon: Users,
-      color: "bg-green-100"
+      color: "bg-green-500"
     },
     {
       label: "Ativos",
       value: agendamentosFixosFiltrados.filter(af => af.ativo).length,
       icon: Clock,
-      color: "bg-purple-100"
+      color: "bg-purple-500"
     }
   ];
 

@@ -1,9 +1,9 @@
-
 import React from 'react';
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import Footer from '@/components/ui/footer';
+import { AppSidebar } from './AppSidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,23 +36,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          <header className="h-16 flex items-center justify-between px-6 bg-white border-b shadow-sm">
-            <div className="flex items-center gap-4">
+          <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-white border-b shadow-sm">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
               <SidebarTrigger />
-              <h1 className="text-xl font-semibold text-gray-800">Sistema de Agendamento</h1>
+              <h1 className="text-sm md:text-lg font-semibold text-gray-800 truncate">
+                <span className="hidden sm:inline">Sistema de Agendamento de Espaços</span>
+                <span className="sm:hidden">Agendamento de Espaços</span>
+              </h1>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className={`px-3 py-1 rounded-full ${getUserTypeBg()}`}>
-                <span className={`text-sm font-medium ${getUserTypeColor()}`}>
-                  {usuario?.nome} - {usuario?.tipo.charAt(0).toUpperCase() + usuario?.tipo.slice(1)}
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+              <div className={`px-2 md:px-3 py-1 rounded-full ${getUserTypeBg()}`}>
+                <span className={`text-xs md:text-sm font-medium ${getUserTypeColor()}`}>
+                  <span className="hidden md:inline">{usuario?.nome} - </span>
+                  <span className="md:hidden">{usuario?.nome?.split(' ')[0]} - </span>
+                  {usuario?.tipo.charAt(0).toUpperCase() + usuario?.tipo.slice(1)}
                 </span>
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={logout}
-                className="text-gray-600 hover:text-gray-800"
+                className="text-gray-600 hover:text-gray-800 text-xs md:text-sm"
               >
                 Sair
               </Button>
@@ -62,6 +67,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <main className="flex-1 p-6 bg-gray-50">
             {children}
           </main>
+          
+          {/* Footer com direitos autorais */}
+          <Footer className="bg-white" />
         </div>
       </div>
     </SidebarProvider>

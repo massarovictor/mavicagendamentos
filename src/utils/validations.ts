@@ -342,7 +342,7 @@ export class BusinessValidations {
         ? null 
         : 'Você não tem permissão para gerenciar este espaço';
     }
-
+    
     if (operacao === 'agendar' && usuario.tipo === 'usuario') {
       return null; // Usuários podem agendar qualquer espaço ativo
     }

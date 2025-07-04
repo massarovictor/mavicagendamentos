@@ -200,6 +200,11 @@ export const useSupabaseData = () => {
       const userUuid = userUuidMap.get(usuario.id);
       if (!userUuid) throw new Error('UUID do usuário não encontrado');
 
+      // Formatar o array de espaços para o formato do PostgreSQL: '{1,2,3}'
+      const espacosFormatado = usuario.espacos && usuario.espacos.length > 0
+        ? `{${usuario.espacos.join(',')}}`
+        : null;
+
       const { error } = await supabase
         .from('usuarios')
         .update({
@@ -207,12 +212,15 @@ export const useSupabaseData = () => {
           email: usuario.email,
           tipo: usuario.tipo,
           ativo: usuario.ativo,
-          espacos: usuario.espacos || null,
+          espacos: espacosFormatado,
           telefone: usuario.telefone || null,
         })
         .eq('id', userUuid);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado do Supabase:', error);
+        throw error;
+      }
 
       await loadData();
       return true;
@@ -516,7 +524,7 @@ export const useSupabaseData = () => {
   return {
     ...state,
     actions: {
-      // Usuários
+      loadData,
       addUsuario,
       updateUsuario,
       deleteUsuario,
@@ -527,8 +535,6 @@ export const useSupabaseData = () => {
         }
         return false;
       },
-
-      // Espaços
       addEspaco,
       updateEspaco,
       deleteEspaco,
@@ -539,19 +545,13 @@ export const useSupabaseData = () => {
         }
         return false;
       },
-
-      // Agendamentos
       addAgendamento,
       updateAgendamento,
       deleteAgendamento,
       updateAgendamentoStatus,
-
-      // Agendamentos Fixos
       addAgendamentoFixo,
       updateAgendamentoFixo,
       deleteAgendamentoFixo,
-
-      // Utilitários
       refreshData: loadData,
       clearError: () => setState(prev => ({ ...prev, error: null })),
     },

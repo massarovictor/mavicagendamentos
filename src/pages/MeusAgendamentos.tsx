@@ -104,25 +104,25 @@ const MeusAgendamentos = () => {
             label: "Total",
             value: meusAgendamentos.length,
             icon: Calendar,
-            color: "bg-blue-100"
+            color: "bg-blue-500"
           },
           {
             label: "Pendentes", 
             value: agendamentosPendentes.length,
             icon: Clock,
-            color: "bg-yellow-100"
+            color: "bg-yellow-500"
           },
           {
             label: "Aprovados",
             value: agendamentosAprovados.length, 
             icon: CheckCircle,
-            color: "bg-green-100"
+            color: "bg-green-500"
           },
           {
             label: "Rejeitados",
             value: meusAgendamentos.filter(a => a.status === 'rejeitado').length,
             icon: X,
-            color: "bg-red-100"
+            color: "bg-red-500"
           }
         ]}
       />

@@ -62,25 +62,25 @@ const UsuarioDashboard = () => {
             label: "Próximos Agendamentos",
             value: proximosAgendamentos.length,
             icon: Calendar,
-            color: "bg-purple-100"
+            color: "bg-purple-500"
           },
           {
             label: "Espaços Disponíveis",
             value: espacosDisponiveis.length,
             icon: Settings,
-            color: "bg-blue-100"
+            color: "bg-blue-500"
           },
           {
             label: "Este Mês",
             value: meusAgendamentosMes.length,
             icon: TrendingUp,
-            color: "bg-green-100"
+            color: "bg-green-500"
           },
           {
             label: "Aprovados",
             value: meusAgendamentos.filter(a => a.status === 'aprovado').length,
             icon: Check,
-            color: "bg-emerald-100"
+            color: "bg-emerald-500"
           }
         ]}
       />

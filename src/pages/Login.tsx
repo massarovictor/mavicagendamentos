@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { LoadingSpinner } from '@/components/ui/loading-state';
+import BrandLogo from '@/components/ui/brand-logo';
+import Footer from '@/components/ui/footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -74,48 +76,58 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Card className="w-full max-w-md shadow-xl animate-fade-in">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-gray-800">Login</CardTitle>
-          <CardDescription className="text-gray-600">
-            Acesse sua conta
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <FormField
-              name="email"
-              label="Email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              validation={{
-                required: true,
-                pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-              }}
-              placeholder="Digite seu email"
-              required
-            />
-            <FormField
-              name="senha"
-              label="Senha"
-              type="password"
-              value={senha}
-              onChange={setSenha}
-              validation={{
-                required: true,
-                minLength: 1
-              }}
-              placeholder="Digite sua senha"
-              required
-            />
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Verificando...' : 'Entrar'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        {/* Logo do Sistema */}
+        <div className="mb-8 animate-fade-in">
+          <BrandLogo size="xl" className="text-center" showSubtitle />
+        </div>
+        
+        <Card className="w-full max-w-md shadow-xl animate-fade-in">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold text-gray-800">Acesso ao Sistema</CardTitle>
+            <CardDescription className="text-gray-600">
+              Entre com suas credenciais
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <FormField
+                name="email"
+                label="Email"
+                type="email"
+                value={email}
+                onChange={setEmail}
+                validation={{
+                  required: true,
+                  pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                }}
+                placeholder="Digite seu email"
+                required
+                />
+              <FormField
+                name="senha"
+                label="Senha"
+                  type="password"
+                  value={senha}
+                onChange={setSenha}
+                validation={{
+                  required: true,
+                  minLength: 1
+                }}
+                  placeholder="Digite sua senha"
+                required
+                />
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? 'Verificando...' : 'Entrar'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Footer com direitos autorais */}
+      <Footer variant="minimal" className="mb-4" />
     </div>
   );
 };

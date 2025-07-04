@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, AlertTriangle, Check, X } from 'lucide-react';
+import { Clock, AlertTriangle, Check, X, CheckCircle } from 'lucide-react';
 import { AULAS_HORARIOS, NumeroAula, Agendamento, AgendamentoFixo } from '@/types';
 import { BusinessValidations } from '@/utils/validations';
 
@@ -54,7 +54,7 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
     if (agendamentosFixosAula.length > 0) {
       return {
         status: 'fixo' as const,
-        color: 'bg-red-100 text-red-800 border-red-200',
+        color: 'bg-red-100 text-red-900 border-red-300',
         icon: X,
         label: 'Fixo',
         agendamentos: agendamentosFixosAula.map(af => ({
@@ -69,8 +69,8 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
     if (aprovados.length > 0) {
       return {
         status: 'aprovado' as const,
-        color: 'bg-green-100 text-green-800 border-green-200',
-        icon: Check,
+        color: 'bg-green-100 text-green-900 border-green-300',
+        icon: CheckCircle,
         label: 'Aprovado',
         agendamentos: aprovados.map(a => ({
           id: a.id,
@@ -84,7 +84,7 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
     if (pendentes.length > 0) {
       return {
         status: 'conflito' as const,
-        color: 'bg-amber-100 text-amber-800 border-amber-200',
+        color: 'bg-amber-100 text-amber-900 border-amber-300',
         icon: AlertTriangle,
         label: pendentes.length > 1 ? `${pendentes.length} conflitos` : 'Pendente',
         agendamentos: pendentes.map(a => ({
@@ -97,26 +97,26 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
 
     return {
       status: 'disponivel' as const,
-      color: 'bg-gray-100 text-gray-600 border-gray-200',
-      icon: Clock,
-      label: 'Disponível',
+      color: 'bg-green-500 text-white border-green-500',
+      icon: Check,
+      label: 'Livre',
       agendamentos: []
     };
   };
 
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
-          Grade de Horários
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Clock className="h-4 w-4" />
+          Horários
         </CardTitle>
-        <CardDescription>
-          {new Date(data).toLocaleDateString('pt-BR')} - Visualização por aula
+        <CardDescription className="text-sm">
+          {new Date(data).toLocaleDateString('pt-BR')}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {aulas.map(aula => {
             const horario = AULAS_HORARIOS[aula];
             const status = getHorarioStatus(aula);
@@ -125,35 +125,29 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
             return (
               <div
                 key={aula}
-                className={`p-3 rounded-lg border-2 transition-all hover:shadow-md ${
+                className={`p-2 rounded border transition-all hover:shadow-sm ${
                   status.status === 'conflito' ? 'hover:border-amber-300' : ''
                 }`}
               >
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="text-center">
-                    <div className="font-medium text-gray-900">
-                      {aula}ª aula
+                    <div className="font-medium text-gray-900 text-sm">
+                      {aula}ª
                     </div>
                     <div className="text-xs text-gray-600">
-                      {horario.inicio} - {horario.fim}
+                      {horario.inicio}
                     </div>
                   </div>
 
                   <div className="flex justify-center">
                     <Badge 
                       variant="outline" 
-                      className={`${status.color} flex items-center gap-1`}
+                      className={`${status.color} flex items-center justify-center text-xs px-1 py-0 min-w-[60px]`}
                     >
-                      <Icon className="h-3 w-3" />
-                      {status.label}
+                      <Icon className="h-3 w-3 !opacity-100 mr-1" />
+                      <span className="truncate text-[10px]">{status.label}</span>
                     </Badge>
                   </div>
-
-                  {status.agendamentos.length > 0 && (
-                    <div className="text-xs text-gray-500 text-center">
-                      {status.agendamentos.length} item(s)
-                    </div>
-                  )}
                 </div>
               </div>
             );
@@ -161,24 +155,23 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
         </div>
 
         {/* Legenda */}
-        <div className="mt-6 pt-4 border-t">
-          <h4 className="text-sm font-medium text-gray-900 mb-3">Legenda:</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-gray-100 border border-gray-200"></div>
-              <span className="text-gray-600">Disponível</span>
+        <div className="mt-3 pt-3 border-t">
+          <div className="grid grid-cols-4 gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <Check className="w-3 h-3 text-green-500 !opacity-100" />
+              <span className="text-gray-600 truncate">Livre</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-amber-100 border border-amber-200"></div>
-              <span className="text-gray-600">Conflito</span>
+            <div className="flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 text-amber-600 !opacity-100" />
+              <span className="text-gray-600 truncate">Conflito</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-green-100 border border-green-200"></div>
-              <span className="text-gray-600">Aprovado</span>
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-3 h-3 text-green-600 !opacity-100" />
+              <span className="text-gray-600 truncate">Aprovado</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded bg-red-100 border border-red-200"></div>
-              <span className="text-gray-600">Agend. Fixo</span>
+            <div className="flex items-center gap-1">
+              <X className="w-3 h-3 text-red-600 !opacity-100" />
+              <span className="text-gray-600 truncate">Fixo</span>
             </div>
           </div>
         </div>

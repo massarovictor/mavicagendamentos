@@ -200,25 +200,25 @@ const AprovarAgendamentos = () => {
       label: 'Total',
       value: counts.total,
       icon: Calendar,
-      color: 'bg-blue-100'
+      color: 'bg-blue-500'
     },
     {
       label: 'Pendentes',
       value: counts.pendentes,
       icon: Clock,
-      color: 'bg-yellow-100'
+      color: 'bg-yellow-500'
     },
     {
       label: 'Conflitos',
       value: counts.conflitos,
       icon: AlertTriangle,
-      color: 'bg-red-100'
+      color: 'bg-red-500'
     },
     {
       label: 'Aprovados',
       value: counts.aprovados,
       icon: Check,
-      color: 'bg-green-100'
+      color: 'bg-green-500'
     }
   ];
 

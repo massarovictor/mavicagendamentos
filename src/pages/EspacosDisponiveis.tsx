@@ -54,19 +54,19 @@ const EspacosDisponiveis = () => {
             label: "Total de Espaços",
             value: espacosAtivos.length,
             icon: MapPin,
-            color: "bg-blue-100"
+            color: "bg-blue-500"
           },
           {
             label: "Disponíveis Hoje",
             value: espacosAtivos.filter(e => getEspacoStats(e.id).disponivel).length,
             icon: Calendar,
-            color: "bg-green-100"
+            color: "bg-green-500"
           },
           {
             label: "Capacidade Total",
             value: espacosAtivos.reduce((sum, e) => sum + e.capacidade, 0),
             icon: Users,
-            color: "bg-purple-100"
+            color: "bg-purple-500"
           }
         ]}
       />
@@ -92,8 +92,8 @@ const EspacosDisponiveis = () => {
                     <p className="text-sm font-medium text-gray-600">Total de Espaços</p>
                     <p className="text-2xl font-bold text-gray-900">{espacosAtivos.length}</p>
                   </div>
-                  <div className="p-3 rounded-full bg-blue-100">
-                    <MapPin className="w-6 h-6 text-blue-600" />
+                  <div className="p-3 rounded-full bg-blue-500">
+                    <MapPin className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </CardContent>
@@ -108,8 +108,8 @@ const EspacosDisponiveis = () => {
                       {espacosAtivos.filter(e => getEspacoStats(e.id).disponivel).length}
                     </p>
                   </div>
-                  <div className="p-3 rounded-full bg-green-100">
-                    <Calendar className="w-6 h-6 text-green-600" />
+                  <div className="p-3 rounded-full bg-green-500">
+                    <Calendar className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </CardContent>

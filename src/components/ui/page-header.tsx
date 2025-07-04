@@ -71,8 +71,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {Icon && (
-              <div className="p-2 rounded-lg bg-blue-100 flex-shrink-0">
-                <Icon className="w-6 h-6 text-blue-600" />
+              <div className="p-2 rounded-lg bg-blue-500 flex-shrink-0">
+                <Icon className="w-6 h-6 text-white" />
               </div>
             )}
             <div className="min-w-0 flex-1">
@@ -128,8 +128,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                       </div>
                     </div>
                     {IconComponent && (
-                      <div className={`p-3 rounded-full ${stat.color || 'bg-blue-100'} flex-shrink-0`}>
-                        <IconComponent className={`w-6 h-6 ${stat.color ? 'text-white' : 'text-blue-600'}`} />
+                      <div className={`p-3 rounded-full ${stat.color || 'bg-blue-500'} flex-shrink-0`}>
+                        <IconComponent className="w-6 h-6 text-white" />
                       </div>
                     )}
                   </div>

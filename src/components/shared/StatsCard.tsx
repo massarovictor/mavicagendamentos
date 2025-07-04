@@ -24,8 +24,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   trend,
   onClick
 }) => {
-  const lightColorClass = colorClass.replace('bg-', 'bg-').replace('-500', '-50');
-  const textColorClass = colorClass.replace('bg-', 'text-').replace('-500', '-600');
+  const lightColorClass = colorClass.replace('-500', '-500');
+  const textColorClass = 'text-white';
 
   return (
     <Card 

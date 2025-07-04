@@ -71,25 +71,25 @@ export default function AdminDashboard() {
             label: "Total de Usuários",
             value: stats.totalUsuarios,
             icon: Users,
-            color: "bg-blue-100"
+            color: "bg-blue-500"
           },
           {
             label: "Espaços Ativos",
             value: stats.espacosAtivos,
             icon: Building2,
-            color: "bg-green-100"
+            color: "bg-green-500"
           },
           {
             label: "Total Agendamentos",
             value: stats.totalAgendamentos,
             icon: Calendar,
-            color: "bg-purple-100"
+            color: "bg-purple-500"
           },
           {
             label: "Pendentes",
             value: stats.agendamentosPendentes,
             icon: AlertTriangle,
-            color: "bg-orange-100"
+            color: "bg-orange-500"
           }
         ]}
       />
@@ -182,8 +182,8 @@ export default function AdminDashboard() {
           <Card className="hover:shadow-lg transition-all cursor-pointer group" onClick={() => navigate('/aprovar-agendamentos')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-purple-100 group-hover:bg-purple-200 transition-colors">
-                  <ClipboardCheck className="w-5 h-5 text-purple-600" />
+                <div className="p-2 rounded-lg bg-purple-500 group-hover:bg-purple-600 transition-colors">
+                  <ClipboardCheck className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="font-semibold text-gray-900">Aprovar Agendamentos</h3>
               </div>
@@ -293,7 +293,7 @@ export default function AdminDashboard() {
                 espacosUtilizacao.map((espaco, index) => (
                   <div key={espaco.id} className="flex items-center justify-between p-3 rounded-lg border">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white font-semibold text-sm">
                         {index + 1}
                       </div>
                       <div>

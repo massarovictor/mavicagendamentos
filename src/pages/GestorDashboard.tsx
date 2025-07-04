@@ -58,25 +58,25 @@ const GestorDashboard = () => {
             label: "Meus Espaços",
             value: meusEspacos.length,
             icon: Settings,
-            color: "bg-green-100"
+            color: "bg-green-500"
           },
           {
             label: "Pendentes Aprovação", 
             value: pendentesAprovacao.length,
             icon: Clock,
-            color: "bg-orange-100"
+            color: "bg-orange-500"
           },
           {
             label: "Próximos Agendamentos",
             value: proximosAgendamentos.length,
             icon: Calendar,
-            color: "bg-blue-100"
+            color: "bg-blue-500"
           },
           {
             label: "Meus Agendamentos",
             value: meusAgendamentos.length,
             icon: Check,
-            color: "bg-purple-100"
+            color: "bg-purple-500"
           }
         ]}
       />

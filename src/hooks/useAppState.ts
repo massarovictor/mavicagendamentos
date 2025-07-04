@@ -108,7 +108,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         dataCorrupted: true,
-        error: action.payload
+        error: action.payload 
       };
     
     case 'UPDATE_USUARIOS':
@@ -332,10 +332,10 @@ export const useAppState = () => {
         }
 
         const loadedData = {
-          usuarios: storedUsuarios,
-          espacos: storedEspacos,
-          agendamentos: storedAgendamentos,
-          agendamentosFixos: storedAgendamentosFixos || []
+              usuarios: storedUsuarios,
+              espacos: storedEspacos,
+              agendamentos: storedAgendamentos,
+              agendamentosFixos: storedAgendamentosFixos || []
         };
 
         // Verificar integridade dos dados carregados
@@ -429,7 +429,7 @@ export const useAppState = () => {
     
     const success = storage.set('usuarios', usuarios);
     if (success) {
-      dispatch({ type: 'UPDATE_USUARIOS', payload: usuarios });
+    dispatch({ type: 'UPDATE_USUARIOS', payload: usuarios });
     }
     return success;
   }, []);
@@ -447,7 +447,7 @@ export const useAppState = () => {
     
     const success = storage.set('espacos', espacos);
     if (success) {
-      dispatch({ type: 'UPDATE_ESPACOS', payload: espacos });
+    dispatch({ type: 'UPDATE_ESPACOS', payload: espacos });
     }
     return success;
   }, []);
@@ -455,7 +455,7 @@ export const useAppState = () => {
   const updateAgendamentos = useCallback((agendamentos: Agendamento[]) => {
     const success = storage.set('agendamentos', agendamentos);
     if (success) {
-      dispatch({ type: 'UPDATE_AGENDAMENTOS', payload: agendamentos });
+    dispatch({ type: 'UPDATE_AGENDAMENTOS', payload: agendamentos });
     }
     return success;
   }, []);
@@ -463,7 +463,7 @@ export const useAppState = () => {
   const updateAgendamentosFixos = useCallback((agendamentosFixos: AgendamentoFixo[]) => {
     const success = storage.set('agendamentosFixos', agendamentosFixos);
     if (success) {
-      dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: agendamentosFixos });
+    dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: agendamentosFixos });
     }
     return success;
   }, []);
@@ -492,7 +492,7 @@ export const useAppState = () => {
     const success = storage.set('agendamentos', newAgendamentos);
     
     if (success) {
-      dispatch({ type: 'ADD_AGENDAMENTO', payload: agendamento });
+    dispatch({ type: 'ADD_AGENDAMENTO', payload: agendamento });
     }
     return success;
   }, []);
@@ -534,7 +534,7 @@ export const useAppState = () => {
     const success = storage.set('espacos', newEspacos);
     
     if (success) {
-      dispatch({ type: 'UPDATE_ESPACOS', payload: newEspacos });
+    dispatch({ type: 'UPDATE_ESPACOS', payload: newEspacos });
     }
     return success;
   }, []);
@@ -545,7 +545,7 @@ export const useAppState = () => {
     const success = storage.set('espacos', newEspacos);
     
     if (success) {
-      dispatch({ type: 'UPDATE_ESPACOS', payload: newEspacos });
+    dispatch({ type: 'UPDATE_ESPACOS', payload: newEspacos });
     }
     return success;
   }, []);
@@ -556,7 +556,7 @@ export const useAppState = () => {
     const success = storage.set('espacos', newEspacos);
     
     if (success) {
-      dispatch({ type: 'UPDATE_ESPACOS', payload: newEspacos });
+    dispatch({ type: 'UPDATE_ESPACOS', payload: newEspacos });
     }
     return success;
   }, []);
@@ -568,7 +568,7 @@ export const useAppState = () => {
     const success = storage.set('usuarios', newUsuarios);
     
     if (success) {
-      dispatch({ type: 'UPDATE_USUARIOS', payload: newUsuarios });
+    dispatch({ type: 'UPDATE_USUARIOS', payload: newUsuarios });
     }
     return success;
   }, []);
@@ -579,7 +579,7 @@ export const useAppState = () => {
     const success = storage.set('usuarios', newUsuarios);
     
     if (success) {
-      dispatch({ type: 'UPDATE_USUARIOS', payload: newUsuarios });
+    dispatch({ type: 'UPDATE_USUARIOS', payload: newUsuarios });
     }
     return success;
   }, []);
@@ -590,7 +590,7 @@ export const useAppState = () => {
     const success = storage.set('usuarios', newUsuarios);
     
     if (success) {
-      dispatch({ type: 'UPDATE_USUARIOS', payload: newUsuarios });
+    dispatch({ type: 'UPDATE_USUARIOS', payload: newUsuarios });
     }
     return success;
   }, []);
@@ -602,7 +602,7 @@ export const useAppState = () => {
     const success = storage.set('agendamentosFixos', newAgendamentosFixos);
     
     if (success) {
-      dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: newAgendamentosFixos });
+    dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: newAgendamentosFixos });
     }
     return success;
   }, []);
@@ -615,7 +615,7 @@ export const useAppState = () => {
     const success = storage.set('agendamentosFixos', newAgendamentosFixos);
     
     if (success) {
-      dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: newAgendamentosFixos });
+    dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: newAgendamentosFixos });
     }
     return success;
   }, []);
@@ -626,7 +626,7 @@ export const useAppState = () => {
     const success = storage.set('agendamentosFixos', newAgendamentosFixos);
     
     if (success) {
-      dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: newAgendamentosFixos });
+    dispatch({ type: 'UPDATE_AGENDAMENTOS_FIXOS', payload: newAgendamentosFixos });
     }
     return success;
   }, []);
