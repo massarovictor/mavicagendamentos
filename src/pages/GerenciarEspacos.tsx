@@ -45,6 +45,9 @@ const GerenciarEspacos = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [espacoToDelete, setEspacoToDelete] = useState<Espaco | null>(null);
 
+  // Estado auxiliar para edição de equipamentos como string
+  const [equipamentosInput, setEquipamentosInput] = useState('');
+
   // Form para criar/editar espaço
   const form = useForm<EspacoFormData>({
     initialValues: {
@@ -64,6 +67,12 @@ const GerenciarEspacos = () => {
         return;
       }
 
+      // Converter equipamentosInput para array
+      const equipamentosArr = equipamentosInput
+        .split(',')
+        .map(eq => eq.trim())
+        .filter(eq => eq);
+
       if (editingEspaco) {
         // Editar espaço existente
         const updatedEspaco: Espaco = {
@@ -71,7 +80,7 @@ const GerenciarEspacos = () => {
           nome: values.nome,
           capacidade: Number(values.capacidade),
           descricao: values.descricao,
-          equipamentos: values.equipamentos
+          equipamentos: equipamentosArr
         };
         await actions.updateEspaco(updatedEspaco);
         notifications.espaco.updated();
@@ -82,7 +91,7 @@ const GerenciarEspacos = () => {
           nome: values.nome,
           capacidade: Number(values.capacidade),
           descricao: values.descricao,
-          equipamentos: values.equipamentos,
+          equipamentos: equipamentosArr,
           ativo: true
         };
         await actions.addEspaco(newEspaco);
@@ -98,6 +107,7 @@ const GerenciarEspacos = () => {
   const resetForm = () => {
     form.reset();
     setEditingEspaco(null);
+    setEquipamentosInput('');
   };
 
   const handleEdit = (espaco: Espaco) => {
@@ -108,6 +118,7 @@ const GerenciarEspacos = () => {
       descricao: espaco.descricao || '',
       equipamentos: espaco.equipamentos || []
     });
+    setEquipamentosInput((espaco.equipamentos || []).join(', '));
     setIsDialogOpen(true);
   };
 
@@ -274,8 +285,8 @@ const GerenciarEspacos = () => {
                     <Label htmlFor="equipamentos">Equipamentos</Label>
                     <Input
                       id="equipamentos"
-                      value={form.values.equipamentos.join(', ')}
-                      onChange={(e) => form.setValue('equipamentos', e.target.value.split(',').map(eq => eq.trim()).filter(eq => eq))}
+                      value={equipamentosInput}
+                      onChange={(e) => setEquipamentosInput(e.target.value)}
                       placeholder="Separados por vírgula"
                     />
                   </div>
