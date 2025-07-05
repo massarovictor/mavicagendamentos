@@ -317,11 +317,11 @@ const NovoAgendamento = () => {
                   <Label htmlFor="espacoId" className="text-sm font-medium">
                     Espaço *
                   </Label>
-                <Select 
+                <Select
                     value={form.values.espacoId.toString()} 
                   onValueChange={(value) => form.setValue('espacoId', parseInt(value))}
                 >
-                    <SelectTrigger className="h-10">
+                    <SelectTrigger className="h-10 bg-background border border-border">
                     <SelectValue placeholder="Selecione o espaço">
                       {form.values.espacoId ? 
                         espacosAtivos.find(e => e.id === form.values.espacoId)?.nome || "Selecione o espaço"
@@ -333,8 +333,8 @@ const NovoAgendamento = () => {
                       {espacosAtivos.map(espaco => (
                       <SelectItem key={espaco.id} value={espaco.id.toString()}>
                           <div className="w-full">
-                            <div className="font-medium text-left">{espaco.nome}</div>
-                            <div className="text-xs text-gray-500 text-left">
+                            <div className="font-medium text-left text-foreground">{espaco.nome}</div>
+                            <div className="text-xs text-foreground text-left">
                               {espaco.capacidade} pessoas
                             </div>
                           </div>
@@ -355,7 +355,7 @@ const NovoAgendamento = () => {
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className={`h-10 w-full justify-start text-left font-normal ${
+                          className={`h-10 w-full justify-start text-left font-normal bg-background border border-border ${
                             !form.values.data && "text-muted-foreground"
                           }`}
                         >
@@ -401,7 +401,7 @@ const NovoAgendamento = () => {
                     value={form.values.aulaInicio.toString()} 
                     onValueChange={(value) => form.setValue('aulaInicio', parseInt(value) as NumeroAula)}
                   >
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-10 bg-background border border-border">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -423,7 +423,7 @@ const NovoAgendamento = () => {
                     value={form.values.aulaFim.toString()} 
                     onValueChange={(value) => form.setValue('aulaFim', parseInt(value) as NumeroAula)}
                   >
-                      <SelectTrigger className="h-10">
+                      <SelectTrigger className="h-10 bg-background border border-border">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
