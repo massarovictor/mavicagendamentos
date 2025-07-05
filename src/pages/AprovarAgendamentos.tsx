@@ -273,8 +273,8 @@ const AprovarAgendamentos = () => {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Filtrar por status</h3>
-              <p className="text-sm text-gray-600">Visualize agendamentos por status</p>
+              <h3 className="text-lg font-semibold text-foreground">Filtrar por status</h3>
+              <p className="text-sm text-foreground/50">Visualize agendamentos por status</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button 
