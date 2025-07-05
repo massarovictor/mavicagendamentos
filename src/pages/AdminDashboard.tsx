@@ -71,65 +71,65 @@ export default function AdminDashboard() {
             label: "Total de Usuários",
             value: stats.totalUsuarios,
             icon: Users,
-            color: "bg-blue-500"
+            color: "bg-card-foreground"
           },
           {
             label: "Espaços Ativos",
             value: stats.espacosAtivos,
             icon: Building2,
-            color: "bg-green-500"
+            color: "bg-chart-1"
           },
           {
             label: "Total Agendamentos",
             value: stats.totalAgendamentos,
             icon: Calendar,
-            color: "bg-purple-500"
+            color: "bg-chart-2"
           },
           {
             label: "Pendentes",
             value: stats.agendamentosPendentes,
             icon: AlertTriangle,
-            color: "bg-orange-500"
+            color: "bg-destructive"
           }
         ]}
       />
 
       {/* Status dos Agendamentos - Informação detalhada */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-green-200 bg-green-50 hover:shadow-lg transition-shadow">
+        <Card className="bg-card text-card-foreground hover:shadow-lg transition-shadow">
           <CardContent className="p-6 text-center">
             <CheckCircle className="w-10 h-10 text-green-600 mx-auto mb-3" />
             <div className="text-3xl font-bold text-green-700 mb-1">
               {stats.agendamentosAprovados}
             </div>
             <div className="text-sm text-green-600 font-medium">Agendamentos Aprovados</div>
-            <div className="text-xs text-green-500 mt-1">
+            <div className="text-xs text-green-600 mt-1">
               {((stats.agendamentosAprovados / stats.totalAgendamentos) * 100 || 0).toFixed(1)}% do total
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="border-orange-200 bg-orange-50 hover:shadow-lg transition-shadow">
+
+        <Card className="bg-card text-card-foreground hover:shadow-lg transition-shadow">
           <CardContent className="p-6 text-center">
-            <Clock className="w-10 h-10 text-orange-600 mx-auto mb-3" />
-            <div className="text-3xl font-bold text-orange-700 mb-1">
+            <Clock className="w-10 h-10 text-yellow-600 mx-auto mb-3" />
+            <div className="text-3xl font-bold text-yellow-700 mb-1">
               {stats.agendamentosPendentes}
             </div>
-            <div className="text-sm text-orange-600 font-medium">Aguardando Aprovação</div>
-            <div className="text-xs text-orange-500 mt-1">
+            <div className="text-sm text-yellow-700 font-medium">Aguardando Aprovação</div>
+            <div className="text-xs text-yellow-700 mt-1">
               {stats.agendamentosPendentes > 0 ? 'Requer atenção' : 'Tudo em dia'}
             </div>
           </CardContent>
         </Card>
-        
-        <Card className="border-red-200 bg-red-50 hover:shadow-lg transition-shadow">
+
+        <Card className="bg-card text-card-foreground hover:shadow-lg transition-shadow">
           <CardContent className="p-6 text-center">
-            <XCircle className="w-10 h-10 text-red-600 mx-auto mb-3" />
-            <div className="text-3xl font-bold text-red-700 mb-1">
+            <XCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
+            <div className="text-3xl font-bold text-destructive mb-1">
               {stats.agendamentosRejeitados}
             </div>
-            <div className="text-sm text-red-600 font-medium">Agendamentos Rejeitados</div>
-            <div className="text-xs text-red-500 mt-1">
+            <div className="text-sm text-destructive font-medium">Agendamentos Rejeitados</div>
+            <div className="text-xs text-destructive mt-1">
               {((stats.agendamentosRejeitados / stats.totalAgendamentos) * 100 || 0).toFixed(1)}% do total
             </div>
           </CardContent>
@@ -137,82 +137,83 @@ export default function AdminDashboard() {
       </div>
 
       {/* Ações Rápidas */}
+
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Activity className="w-5 h-5" />
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Activity className="w-5 h-5 text-primary" />
           Ações Rápidas
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="hover:shadow-lg transition-all cursor-pointer group" onClick={() => navigate('/usuarios')}>
+          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/usuarios')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
-                  <UserPlus className="w-5 h-5 text-blue-600" />
+                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
+                  <UserPlus className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-gray-900">Gerenciar Usuários</h3>
+                <h3 className="font-semibold text-foreground">Gerenciar Usuários</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Adicionar, editar ou remover usuários do sistema
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">Acessar</span>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                <span className="text-xs text-muted-foreground">Acessar</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all cursor-pointer group" onClick={() => navigate('/espacos')}>
+          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/espacos')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-green-100 group-hover:bg-green-200 transition-colors">
-                  <Building2 className="w-5 h-5 text-green-600" />
+                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
+                  <Building2 className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-gray-900">Gerenciar Espaços</h3>
+                <h3 className="font-semibold text-foreground">Gerenciar Espaços</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Configurar e organizar os espaços disponíveis
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">Acessar</span>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                <span className="text-xs text-muted-foreground">Acessar</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all cursor-pointer group" onClick={() => navigate('/aprovar-agendamentos')}>
+          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/aprovar-agendamentos')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-purple-500 group-hover:bg-purple-600 transition-colors">
-                  <ClipboardCheck className="w-5 h-5 text-white" />
+                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
+                  <ClipboardCheck className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-gray-900">Aprovar Agendamentos</h3>
+                <h3 className="font-semibold text-foreground">Aprovar Agendamentos</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Revisar e aprovar agendamentos pendentes
               </p>
               <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="bg-orange-100 text-orange-700 text-xs">
+                <Badge variant="secondary" className="text-xs">
                   {stats.agendamentosPendentes} pendente{stats.agendamentosPendentes !== 1 ? 's' : ''}
                 </Badge>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all cursor-pointer group" onClick={() => navigate('/todos-agendamentos')}>
+          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/todos-agendamentos')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                  <BarChart3 className="w-5 h-5 text-gray-600" />
+                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
+                  <BarChart3 className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold text-gray-900">Todos Agendamentos</h3>
+                <h3 className="font-semibold text-foreground">Todos Agendamentos</h3>
               </div>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Visualizar todos os agendamentos do sistema
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">Acessar</span>
-                <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                <span className="text-xs text-muted-foreground">Acessar</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
             </CardContent>
           </Card>
@@ -222,10 +223,10 @@ export default function AdminDashboard() {
       {/* Dashboard Inferior */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Agendamentos Recentes */}
-        <Card>
+        <Card className="bg-card text-card-foreground">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <Calendar className="w-5 h-5 text-primary" />
               Agendamentos Recentes
             </CardTitle>
           </CardHeader>
@@ -236,29 +237,28 @@ export default function AdminDashboard() {
                   agendamentosRecentes.map((agendamento) => {
                     const usuario = usuarios.find(u => u.id === agendamento.usuarioId);
                     const espaco = espacos.find(e => e.id === agendamento.espacoId);
-                    
                     return (
-                      <div key={agendamento.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                      <div key={agendamento.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-sm text-gray-900">{espaco?.nome}</p>
+                            <p className="font-medium text-sm text-foreground">{espaco?.nome}</p>
                             <StatusBadge status={agendamento.status} />
                           </div>
-                          <p className="text-xs text-gray-600 mb-1">
+                          <p className="text-xs text-muted-foreground mb-1">
                             {usuario?.nome} • {formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             {new Date(agendamento.data).toLocaleDateString('pt-BR')}
                           </p>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </div>
                     );
                   })
                 ) : (
                   <div className="text-center py-8">
-                    <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500">Nenhum agendamento encontrado</p>
+                    <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">Nenhum agendamento encontrado</p>
                   </div>
                 )}
               </div>
@@ -280,10 +280,10 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Espaços Mais Utilizados */}
-        <Card>
+        <Card className="bg-card text-card-foreground">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 text-foreground">
+              <Building2 className="w-5 h-5 text-primary" />
               Espaços Mais Utilizados
             </CardTitle>
           </CardHeader>
@@ -291,14 +291,14 @@ export default function AdminDashboard() {
             <div className="space-y-4">
               {espacosUtilizacao.length > 0 ? (
                 espacosUtilizacao.map((espaco, index) => (
-                  <div key={espaco.id} className="flex items-center justify-between p-3 rounded-lg border">
+                  <div key={espaco.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white font-semibold text-sm">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-semibold text-sm">
                         {index + 1}
                       </div>
                       <div>
-                        <p className="font-medium text-sm text-gray-900">{espaco.nome}</p>
-                        <p className="text-xs text-gray-600">
+                        <p className="font-medium text-sm text-foreground">{espaco.nome}</p>
+                        <p className="text-xs text-muted-foreground">
                           Capacidade: {espaco.capacidade} pessoas
                         </p>
                       </div>
@@ -307,9 +307,9 @@ export default function AdminDashboard() {
                       <Badge variant="secondary" className="mb-1">
                         {espaco.utilizacao} usos
                       </Badge>
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div className="w-16 bg-muted rounded-full h-2">
                         <div 
-                          className="h-2 bg-blue-500 rounded-full transition-all"
+                          className="h-2 bg-primary rounded-full transition-all"
                           style={{ 
                             width: `${Math.min(100, (espaco.utilizacao / Math.max(...espacosUtilizacao.map(e => e.utilizacao))) * 100)}%` 
                           }}
@@ -320,8 +320,8 @@ export default function AdminDashboard() {
                 ))
               ) : (
                 <div className="text-center py-8">
-                  <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">Nenhum espaço encontrado</p>
+                  <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">Nenhum espaço encontrado</p>
                 </div>
               )}
             </div>
