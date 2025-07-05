@@ -69,24 +69,23 @@ const Login = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <LoadingSpinner message="Verificando credenciais..." size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex flex-col bg-background">
       <div className="flex-1 flex flex-col items-center justify-center px-4">
         {/* Logo do Sistema */}
         <div className="mb-8 animate-fade-in">
           <BrandLogo size="xl" className="text-center" showSubtitle />
         </div>
-        
-        <Card className="w-full max-w-md shadow-xl animate-fade-in">
+        <Card className="w-full max-w-md shadow-xl animate-fade-in bg-card text-foreground">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-gray-800">Acesso ao Sistema</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-2xl font-bold text-foreground">Acesso ao Sistema</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Entre com suas credenciais
             </CardDescription>
           </CardHeader>
@@ -104,20 +103,20 @@ const Login = () => {
                 }}
                 placeholder="Digite seu email"
                 required
-                />
+              />
               <FormField
                 name="senha"
                 label="Senha"
-                  type="password"
-                  value={senha}
+                type="password"
+                value={senha}
                 onChange={setSenha}
                 validation={{
                   required: true,
                   minLength: 1
                 }}
-                  placeholder="Digite sua senha"
+                placeholder="Digite sua senha"
                 required
-                />
+              />
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Verificando...' : 'Entrar'}
               </Button>
@@ -125,7 +124,6 @@ const Login = () => {
           </CardContent>
         </Card>
       </div>
-      
       {/* Footer com direitos autorais */}
       <Footer variant="minimal" className="mb-4" />
     </div>
