@@ -116,7 +116,6 @@ const NovoAgendamento = () => {
       // Validação Zod primeiro
       try {
         const validatedData = agendamentoSchema.parse(values);
-        console.log('Dados validados pelo Zod:', validatedData);
       } catch (error: any) {
         if (error.errors) {
           error.errors.forEach((err: any) => {
