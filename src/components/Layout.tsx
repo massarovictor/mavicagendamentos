@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Footer from '@/components/ui/footer';
 import { AppSidebar } from './AppSidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Moon } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -31,14 +31,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const darkMode = () => {
-    const htmlElement = document.documentElement;
-    if (htmlElement.classList.contains('dark')) {
-      htmlElement.classList.remove('dark');
-    } else {
-      htmlElement.classList.add('dark');
-    }
-  };
 
   return (
     <SidebarProvider>
@@ -62,7 +54,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {usuario?.tipo.charAt(0).toUpperCase() + usuario?.tipo.slice(1)}
                 </span>
               </div>
-              <Button variant='outline' size='sm' onClick={darkMode} className='text-muted-foreground hover:text-foreground text-xs md:text-sm'><Moon/></Button>
+              <ThemeToggle />
               <Button 
                 variant="outline" 
                 size="sm" 
