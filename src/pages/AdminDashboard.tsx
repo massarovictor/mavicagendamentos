@@ -238,7 +238,7 @@ export default function AdminDashboard() {
                     const usuario = usuarios.find(u => u.id === agendamento.usuarioId);
                     const espaco = espacos.find(e => e.id === agendamento.espacoId);
                     return (
-                      <div key={agendamento.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors">
+                      <div key={agendamento.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors bg-background">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-medium text-sm text-foreground">{espaco?.nome}</p>
