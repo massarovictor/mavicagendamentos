@@ -104,25 +104,25 @@ const MeusAgendamentos = () => {
             label: "Total",
             value: meusAgendamentos.length,
             icon: Calendar,
-            color: "bg-blue-500"
+            color: "bg-primary"
           },
           {
             label: "Pendentes", 
             value: agendamentosPendentes.length,
             icon: Clock,
-            color: "bg-yellow-500"
+            color: "bg-chart-3"
           },
           {
             label: "Aprovados",
             value: agendamentosAprovados.length, 
             icon: CheckCircle,
-            color: "bg-green-500"
+            color: "bg-chart-4"
           },
           {
             label: "Rejeitados",
             value: meusAgendamentos.filter(a => a.status === 'rejeitado').length,
             icon: X,
-            color: "bg-red-500"
+            color: "bg-chart-5"
           }
         ]}
       />
@@ -318,7 +318,7 @@ const MeusAgendamentos = () => {
             ]}
             emptyState={
               <div className="text-center py-8">
-                <div className="text-gray-500">
+                <div className="text-foreground/50">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="font-medium">Nenhum agendamento encontrado</p>
                   <p className="text-sm">Tente ajustar os filtros ou criar um novo agendamento</p>
