@@ -19,6 +19,7 @@ import {
   Plus,
   Check,
   Clock,
+  Home,
 } from 'lucide-react';
 
 export function AppSidebar() {
@@ -30,23 +31,23 @@ export function AppSidebar() {
     if (isActive(url)) return 'text-blue-700';
     
     switch (url) {
-      case '/dashboard': return 'text-blue-600';
-      case '/novo-agendamento': return 'text-green-600';
-      case '/meus-agendamentos': return 'text-purple-600';
-      case '/espacos': return 'text-orange-600';
-      case '/usuarios': return 'text-indigo-600';
-      case '/todos-agendamentos': return 'text-violet-600';
-      case '/agendamentos-fixos': return 'text-red-600';
-      case '/meus-espacos': return 'text-amber-600';
-      case '/aprovar-agendamentos': return 'text-emerald-600';
-      case '/espacos-disponiveis': return 'text-slate-600';
+      case '/dashboard': return 'text-foreground';
+      case '/novo-agendamento': return 'text-primary';
+      case '/meus-agendamentos': return 'text-foreground';
+      case '/espacos': return 'text-foreground';
+      case '/usuarios': return 'text-foreground';
+      case '/todos-agendamentos': return 'text-foreground';
+      case '/agendamentos-fixos': return 'text-foreground';
+      case '/meus-espacos': return 'text-foreground';
+      case '/aprovar-agendamentos': return 'text-foreground';
+      case '/espacos-disponiveis': return 'text-foreground';
       default: return 'text-gray-600';
     }
   };
 
   const getMenuItems = () => {
     const baseItems = [
-      { title: "Dashboard", url: "/dashboard", icon: Calendar },
+      { title: "Dashboard", url: "/dashboard", icon: Home },
       { title: "Novo Agendamento", url: "/novo-agendamento", icon: Plus },
       { title: "Meus Agendamentos", url: "/meus-agendamentos", icon: Calendar },
     ];
@@ -91,14 +92,14 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar className={`w-64 border-r-2 ${getUserTypeColor()}`}>
-      <SidebarContent className="bg-white">
+    <Sidebar className={`w-64 border-r-2 border-border bg-sidebar ${getUserTypeColor()}`}>
+      <SidebarContent className="bg-sidebar text-sidebar-foreground">
         {/* Logo do Sistema */}
-        <div className="px-4 py-3 border-b border-gray-200">
+        <div className="px-4 py-3 border-b border-border">
           <div className="flex justify-center">
             <MavicCompleto 
               size={120} 
-              className="text-gray-700" 
+              className="text-sidebar-foreground" 
             />
           </div>
         </div>
@@ -113,8 +114,8 @@ export function AppSidebar() {
                       to={item.url}
                       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                         isActive(item.url)
-                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-800'
+                          ? 'bg-accent text-primary border-r-2 border-primary'
+                          : 'text-sidebar-foreground hover:bg-accent hover:text-foreground'
                       }`}
                     >
                       <item.icon className={`h-5 w-5 flex-shrink-0 ${getIconColor(item.url)}`} />
