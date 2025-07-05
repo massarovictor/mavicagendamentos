@@ -31,10 +31,10 @@ const UsuarioDashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'aprovado': return 'bg-green-100 text-green-800';
-      case 'rejeitado': return 'bg-red-100 text-red-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'aprovado': return 'bg-success/20 text-success-foreground';
+      case 'rejeitado': return 'bg-destructive/20 text-destructive-foreground';
+      case 'pendente': return 'bg-warning/20 text-warning-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -52,7 +52,7 @@ const UsuarioDashboard = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-background text-foreground">
       <PageHeader 
         title="Meu Dashboard"
         subtitle="Gerencie seus agendamentos e visualize espaços disponíveis"
@@ -68,38 +68,37 @@ const UsuarioDashboard = () => {
             label: "Espaços Disponíveis",
             value: espacosDisponiveis.length,
             icon: Settings,
-            color: "bg-blue-500"
+            color: "bg-primary"
           },
           {
             label: "Este Mês",
             value: meusAgendamentosMes.length,
             icon: TrendingUp,
-            color: "bg-green-500"
+            color: "bg-chart-5"
           },
           {
             label: "Aprovados",
             value: meusAgendamentos.filter(a => a.status === 'aprovado').length,
             icon: Check,
-            color: "bg-emerald-500"
+            color: "bg-chart-2"
           }
         ]}
       />
 
       {/* Estatísticas duplicadas removidas – já presentes no PageHeader */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-purple-600" />
               Próximos Agendamentos
             </CardTitle>
-            <CardDescription>Seus compromissos futuros</CardDescription>
+            <CardDescription className="text-muted-foreground">Seus compromissos futuros</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {proximosAgendamentos.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-gray-500">
+                  <div className="text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="font-medium">Nenhum agendamento próximo</p>
                     <p className="text-sm">Que tal criar um novo agendamento?</p>
@@ -109,14 +108,14 @@ const UsuarioDashboard = () => {
                 proximosAgendamentos.slice(0, 5).map((agendamento) => {
                   const espaco = espacos.find(e => e.id === agendamento.espacoId);
                   return (
-                    <div key={agendamento.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-purple-50 rounded-lg border-l-4 border-purple-400 gap-3 hover:bg-purple-100 transition-colors">
+                    <div key={agendamento.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-background rounded-lg border-l-2 border-primary gap-3 hover:bg-accent transition-colors">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 truncate">{espaco?.nome}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="font-medium text-foreground truncate">{espaco?.nome}</p>
+                        <p className="text-sm text-muted-foreground">
                           {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
                         </p>
                         {agendamento.observacoes && (
-                          <p className="text-sm text-gray-500 mt-1 truncate">{agendamento.observacoes}</p>
+                          <p className="text-sm text-muted-foreground mt-1 truncate">{agendamento.observacoes}</p>
                         )}
                       </div>
                       <Badge className={getStatusColor(agendamento.status)} variant="outline">
@@ -130,19 +129,18 @@ const UsuarioDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-blue-600" />
               Espaços Disponíveis
             </CardTitle>
-            <CardDescription>Para seus agendamentos</CardDescription>
+            <CardDescription className="text-muted-foreground">Para seus agendamentos</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {espacosDisponiveis.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-gray-500">
+                  <div className="text-muted-foreground">
                     <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="font-medium">Nenhum espaço disponível</p>
                     <p className="text-sm">Contate o administrador</p>
@@ -154,16 +152,16 @@ const UsuarioDashboard = () => {
                     a.espacoId === espaco.id && a.data === today
                   );
                   return (
-                    <div key={espaco.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                    <div key={espaco.id} className="flex items-center justify-between p-4 bg-background rounded-lg hover:bg-accent transition-colors">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{espaco.nome}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="font-medium text-foreground truncate">{espaco.nome}</p>
+                        <p className="text-sm text-muted-foreground">
                           Capacidade: {espaco.capacidade} pessoas
                         </p>
                         {espaco.equipamentos && espaco.equipamentos.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {espaco.equipamentos.slice(0, 2).map((eq, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                              <Badge key={index} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground">
                                 {eq}
                               </Badge>
                             ))}
@@ -176,10 +174,10 @@ const UsuarioDashboard = () => {
                         )}
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-sm font-medium text-blue-600">
+                        <p className="text-sm font-medium text-primary">
                           {agendamentosHojeEspaco.length}
                         </p>
-                        <p className="text-xs text-gray-500">hoje</p>
+                        <p className="text-xs text-muted-foreground">hoje</p>
                       </div>
                     </div>
                   );
@@ -190,19 +188,19 @@ const UsuarioDashboard = () => {
         </Card>
       </div>
 
-      <Card className="hover:shadow-lg transition-shadow">
+      <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-gray-600" />
+            <Clock className="w-5 h-5 text-primary" />
             Histórico de Agendamentos
           </CardTitle>
-          <CardDescription>Seus últimos agendamentos</CardDescription>
+          <CardDescription className="text-muted-foreground">Seus últimos agendamentos</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             {meusAgendamentos.length === 0 ? (
               <div className="text-center py-8">
-                <div className="text-gray-500">
+                <div className="text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p className="font-medium">Nenhum agendamento realizado</p>
                   <p className="text-sm">Comece criando seu primeiro agendamento</p>
@@ -213,21 +211,21 @@ const UsuarioDashboard = () => {
                 const espaco = espacos.find(e => e.id === agendamento.espacoId);
                 const isPast = new Date(agendamento.data) < new Date();
                 return (
-                  <div key={agendamento.id} className={`flex items-center justify-between p-4 rounded-lg hover:shadow-md transition-all ${
-                    isPast ? 'bg-gray-50 hover:bg-gray-100' : 'bg-green-50 hover:bg-green-100'
+                  <div key={agendamento.id} className={`flex items-center bg-background justify-between p-4 rounded-lg hover:shadow-md transition-all ${
+                    isPast ? 'bg-muted hover:bg-accent/40' : 'bg-success/20 hover:bg-success/40'
                   }`}>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{espaco?.nome}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="font-medium text-foreground truncate">{espaco?.nome}</p>
+                      <p className="text-sm text-muted-foreground">
                         {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
                       </p>
                       {agendamento.observacoes && (
-                        <p className="text-sm text-gray-500 mt-1 truncate">{agendamento.observacoes}</p>
+                        <p className="text-sm text-muted-foreground mt-1 truncate">{agendamento.observacoes}</p>
                       )}
                     </div>
                     <div className="flex items-center gap-3 ml-4">
                       {isPast && (
-                        <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                        <Badge variant="secondary" className="bg-muted text-muted-foreground">
                           Realizado
                         </Badge>
                       )}

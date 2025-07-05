@@ -38,7 +38,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   className = ""
 }) => {
   return (
-    <div className={`bg-white border-b border-gray-200 ${className}`}>
+    <div className={`bg-background border-2 border-border rounded-lg ${className}`}>
       <div className="px-4 py-6 sm:px-6">
         {/* Breadcrumbs */}
         {breadcrumbs && breadcrumbs.length > 0 && (
@@ -47,17 +47,17 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               {breadcrumbs.map((item, index) => (
                 <li key={index} className="flex items-center">
                   {index > 0 && (
-                    <span className="mx-2 text-gray-400">/</span>
+                    <span className="mx-2 text-muted-foreground">/</span>
                   )}
                   {item.href ? (
                     <a 
                       href={item.href}
-                      className="text-gray-500 hover:text-gray-700 transition-colors"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {item.label}
                     </a>
                   ) : (
-                    <span className="text-gray-900 font-medium">
+                    <span className="text-foreground font-medium">
                       {item.label}
                     </span>
                   )}
@@ -71,22 +71,21 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {Icon && (
-              <div className="p-2 rounded-lg bg-blue-500 flex-shrink-0">
-                <Icon className="w-6 h-6 text-white" />
+              <div className="p-2 rounded-lg bg-primary flex-shrink-0">
+                <Icon className="w-6 h-6 text-primary-foreground" />
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl truncate">
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl truncate">
                 {title}
               </h1>
               {subtitle && (
-                <p className="mt-1 text-sm text-gray-600 sm:text-base">
+                <p className="mt-1 text-sm text-muted-foreground sm:text-base">
                   {subtitle}
                 </p>
               )}
             </div>
           </div>
-          
           {actions && (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 flex-shrink-0">
               {actions}
@@ -102,15 +101,15 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               return (
                 <div
                   key={index}
-                  className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                  className="bg-card rounded-lg p-4 hover:bg-accent transition-colors text-card-foreground"
                 >
                   <div className="flex items-center justify-between">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-600 truncate">
+                      <p className="text-sm font-medium text-muted-foreground truncate">
                         {stat.label}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-2xl font-bold text-foreground">
                           {stat.value}
                         </p>
                         {stat.trend && (
@@ -128,8 +127,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
                       </div>
                     </div>
                     {IconComponent && (
-                      <div className={`p-3 rounded-full ${stat.color || 'bg-blue-500'} flex-shrink-0`}>
-                        <IconComponent className="w-6 h-6 text-white" />
+                      <div className={`p-3 rounded-full ${stat.color || 'bg-primary'} flex-shrink-0`}>
+                        <IconComponent className="w-6 h-6 text-primary-foreground" />
                       </div>
                     )}
                   </div>

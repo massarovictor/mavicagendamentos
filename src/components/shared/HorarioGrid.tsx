@@ -97,7 +97,7 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
 
     return {
       status: 'disponivel' as const,
-      color: 'bg-green-500 text-white border-green-500',
+      color: 'bg-chart-4 text-white border-chart-4',
       icon: Check,
       label: 'Livre',
       agendamentos: []
@@ -125,16 +125,16 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
             return (
               <div
                 key={aula}
-                className={`p-2 rounded border transition-all hover:shadow-sm ${
+                className={`p-2 rounded border bg-background transition-all hover:shadow-sm ${
                   status.status === 'conflito' ? 'hover:border-amber-300' : ''
                 }`}
               >
                 <div className="space-y-1">
                   <div className="text-center">
-                    <div className="font-medium text-gray-900 text-sm">
+                    <div className="font-medium text-foreground text-sm">
                       {aula}ª
                     </div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-foreground/70">
                       {horario.inicio}
                     </div>
                   </div>
@@ -157,21 +157,21 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
         {/* Legenda */}
         <div className="mt-3 pt-3 border-t">
           <div className="grid grid-cols-4 gap-2 text-xs">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-background w-fit px-2 rounded-lg">
               <Check className="w-3 h-3 text-green-500 !opacity-100" />
-              <span className="text-gray-600 truncate">Livre</span>
+              <span className="text-secondary truncate">Livre</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-background w-fit px-2 rounded-lg">
               <AlertTriangle className="w-3 h-3 text-amber-600 !opacity-100" />
-              <span className="text-gray-600 truncate">Conflito</span>
+              <span className="text-secondary truncate">Conflito</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-background w-fit px-2 rounded-lg">
               <CheckCircle className="w-3 h-3 text-green-600 !opacity-100" />
-              <span className="text-gray-600 truncate">Aprovado</span>
+              <span className="text-secondary truncate">Aprovado</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-background w-fit px-2 rounded-lg">
               <X className="w-3 h-3 text-red-600 !opacity-100" />
-              <span className="text-gray-600 truncate">Fixo</span>
+              <span className="text-secondary truncate">Fixo</span>
             </div>
           </div>
         </div>

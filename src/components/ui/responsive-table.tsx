@@ -107,7 +107,7 @@ export function ResponsiveTable<T>({
               <TableRow
                 key={itemId}
                 className={cn(
-                  "hover:bg-gray-50 transition-colors",
+                  "hover:bg-background transition-colors",
                   onRowClick && "cursor-pointer",
                   isSelected(item) && "bg-blue-50"
                 )}

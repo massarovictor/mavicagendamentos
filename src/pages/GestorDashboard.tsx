@@ -27,10 +27,10 @@ const GestorDashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'aprovado': return 'bg-green-100 text-green-800';
-      case 'rejeitado': return 'bg-red-100 text-red-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'aprovado': return 'bg-success/20 border border-success text-success-foreground';
+      case 'rejeitado': return 'bg-destructive/20 border border-destructive text-destructive-foreground';
+      case 'pendente': return 'bg-warning/20 border border-warning text-warning-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -48,7 +48,7 @@ const GestorDashboard = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-background text-foreground">
       <PageHeader 
         title="Dashboard do Gestor"
         subtitle="Gerencie seus espaços e agendamentos"
@@ -58,43 +58,43 @@ const GestorDashboard = () => {
             label: "Meus Espaços",
             value: meusEspacos.length,
             icon: Settings,
-            color: "bg-green-500"
+            color: "bg-purple-500"
           },
           {
             label: "Pendentes Aprovação", 
             value: pendentesAprovacao.length,
             icon: Clock,
-            color: "bg-orange-500"
+            color: "bg-chart-5"
           },
           {
             label: "Próximos Agendamentos",
             value: proximosAgendamentos.length,
             icon: Calendar,
-            color: "bg-blue-500"
+            color: "bg-primary"
           },
           {
             label: "Meus Agendamentos",
             value: meusAgendamentos.length,
             icon: Check,
-            color: "bg-purple-500"
+            color: "bg-chart-2"
           }
         ]}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-600" />
+              <AlertCircle className="w-5 h-5 text-warning" />
               Agendamentos Pendentes
             </CardTitle>
-            <CardDescription>Requerem sua aprovação</CardDescription>
+            <CardDescription className="text-muted-foreground">Requerem sua aprovação</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {pendentesAprovacao.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-gray-500">
+                  <div className="text-muted-foreground">
                     <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="font-medium">Nenhum agendamento pendente</p>
                     <p className="text-sm">Todos os agendamentos foram processados</p>
@@ -105,19 +105,19 @@ const GestorDashboard = () => {
                   const espaco = espacos.find(e => e.id === agendamento.espacoId);
                   const usuarioAgendamento = usuarios.find(u => u.id === agendamento.usuarioId);
                   return (
-                    <div key={agendamento.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-orange-50 rounded-lg border-l-4 border-orange-400 gap-3 hover:bg-orange-100 transition-colors">
+                    <div key={agendamento.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-background rounded-lg border-l-4 border-primary/60 gap-3 hover:bg-warning/20 transition-colors">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 truncate">{espaco?.nome}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="font-medium text-foreground truncate">{espaco?.nome}</p>
+                        <p className="text-sm text-muted-foreground">
                           <span className="block sm:inline">{usuarioAgendamento?.nome}</span>
                           <span className="block sm:inline sm:ml-1">- {formatDate(agendamento.data)}</span>
                           <span className="block sm:inline sm:ml-1">{formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)}</span>
                         </p>
                         {agendamento.observacoes && (
-                          <p className="text-sm text-orange-600 mt-1 truncate">{agendamento.observacoes}</p>
+                          <p className="text-sm text-warning mt-1 truncate">{agendamento.observacoes}</p>
                         )}
                       </div>
-                      <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">
+                      <Badge variant="outline" className="bg-warning/20 text-warning-foreground border-warning">
                         Pendente
                       </Badge>
                     </div>
@@ -128,19 +128,19 @@ const GestorDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
+              <Calendar className="w-5 h-5 text-primary" />
               Próximos Agendamentos
             </CardTitle>
-            <CardDescription>Nos seus espaços</CardDescription>
+            <CardDescription className="text-muted-foreground">Nos seus espaços</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {proximosAgendamentos.length === 0 ? (
                 <div className="text-center py-8">
-                  <div className="text-gray-500">
+                  <div className="text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="font-medium">Nenhum agendamento próximo</p>
                     <p className="text-sm">Seus espaços estão livres</p>
@@ -151,14 +151,14 @@ const GestorDashboard = () => {
                   const espaco = espacos.find(e => e.id === agendamento.espacoId);
                   const usuarioAgendamento = usuarios.find(u => u.id === agendamento.usuarioId);
                   return (
-                    <div key={agendamento.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div key={agendamento.id} className="flex items-center justify-between p-4 bg-background rounded-lg hover:bg-accent transition-colors">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{espaco?.nome}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="font-medium text-foreground truncate">{espaco?.nome}</p>
+                        <p className="text-sm text-muted-foreground">
                           {usuarioAgendamento?.nome} - {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
                         </p>
                         {agendamento.observacoes && (
-                          <p className="text-sm text-gray-500 mt-1 truncate">{agendamento.observacoes}</p>
+                          <p className="text-sm text-muted-foreground mt-1 truncate">{agendamento.observacoes}</p>
                         )}
                       </div>
                       <Badge variant="outline" className={getStatusColor(agendamento.status)}>
@@ -173,18 +173,18 @@ const GestorDashboard = () => {
         </Card>
       </div>
 
-      <Card className="hover:shadow-lg transition-shadow">
+      <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-green-600" />
+            <Settings className="w-5 h-5 text-success" />
             Meus Espaços
           </CardTitle>
-          <CardDescription>Espaços sob sua gestão</CardDescription>
+          <CardDescription className="text-muted-foreground">Espaços sob sua gestão</CardDescription>
         </CardHeader>
         <CardContent>
           {meusEspacos.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-gray-500">
+              <div className="text-muted-foreground">
                 <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="font-medium">Nenhum espaço atribuído</p>
                 <p className="text-sm">Contate o administrador para obter acesso</p>
@@ -196,20 +196,20 @@ const GestorDashboard = () => {
                 const agendamentosEspaco = agendamentosMeusEspacos.filter(a => a.espacoId === espaco.id);
                 const pendentes = agendamentosEspaco.filter(a => a.status === 'pendente').length;
                 return (
-                  <div key={espaco.id} className="p-4 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors">
-                    <h3 className="font-semibold text-gray-900 truncate">{espaco.nome}</h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                  <div key={espaco.id} className="p-4 bg-background rounded-lg border border-primary/60 transition-colors">
+                    <h3 className="font-semibold text-foreground truncate">{espaco.nome}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
                       Capacidade: {espaco.capacidade} pessoas
                     </p>
                     {espaco.descricao && (
-                      <p className="text-sm text-gray-500 mt-1 truncate">{espaco.descricao}</p>
+                      <p className="text-sm text-muted-foreground mt-1 truncate">{espaco.descricao}</p>
                     )}
                     <div className="flex items-center justify-between mt-3">
-                      <Badge variant="secondary" className="bg-green-100 text-green-700">
+                      <Badge variant="secondary" className="bg-secondary-foreground text-foreground">
                         {agendamentosEspaco.length} total
                       </Badge>
                       {pendentes > 0 && (
-                        <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-200">
+                        <Badge variant="outline" className="bg-warning/20 text-warning-foreground border-warning">
                           {pendentes} pendente{pendentes > 1 ? 's' : ''}
                         </Badge>
                       )}

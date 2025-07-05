@@ -93,7 +93,7 @@ const MeusEspacos = () => {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-background text-foreground">
       {/* PageHeader */}
       <PageHeader
         title="Meus Espaços"
@@ -103,9 +103,9 @@ const MeusEspacos = () => {
       />
 
       {meusEspacos.length === 0 ? (
-        <Card className="hover:shadow-lg transition-shadow">
+        <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
           <CardContent className="text-center py-12">
-            <div className="text-gray-500">
+            <div className="text-muted-foreground">
               <Settings className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <p className="font-medium text-lg">Nenhum espaço atribuído</p>
               <p className="text-sm">Contate o administrador para obter acesso a espaços</p>
@@ -119,40 +119,40 @@ const MeusEspacos = () => {
             {meusEspacos.map((espaco) => {
               const stats = getEspacoStats(espaco.id);
               return (
-                <Card key={espaco.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <Card key={espaco.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card text-foreground">
                   <CardHeader className="pb-3">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <CardTitle className="text-lg font-semibold text-gray-900 truncate">
+                      <CardTitle className="text-lg font-semibold text-foreground truncate">
                         {espaco.nome}
                       </CardTitle>
                       <Badge 
                         variant={espaco.ativo ? "default" : "secondary"}
                         className={`text-xs w-fit ${
                           espaco.ativo 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-success/20 text-success-foreground' 
+                            : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         {espaco.ativo ? "Ativo" : "Inativo"}
                       </Badge>
                     </div>
-                    <CardDescription className="text-sm text-gray-600 line-clamp-2">
+                    <CardDescription className="text-sm text-muted-foreground line-clamp-2">
                       {espaco.descricao || "Sem descrição disponível"}
                     </CardDescription>
                   </CardHeader>
                   
                   <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Users className="h-4 w-4 flex-shrink-0 text-gray-500" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                       <span className="font-medium">{espaco.capacidade} pessoas</span>
                     </div>
 
                     {espaco.equipamentos && espaco.equipamentos.length > 0 && (
                       <div>
-                        <p className="text-sm font-medium text-gray-700 mb-2">Equipamentos:</p>
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Equipamentos:</p>
                         <div className="flex flex-wrap gap-1">
                           {espaco.equipamentos.slice(0, 3).map((eq, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                            <Badge key={index} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground">
                               {eq}
                             </Badge>
                           ))}
@@ -166,19 +166,19 @@ const MeusEspacos = () => {
                     )}
 
                     {/* Taxa de ocupação */}
-                    <div className="flex items-center justify-between text-sm text-gray-600 pt-2 border-t">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
                       <div className="flex items-center gap-1">
-                        <TrendingUp className="h-4 w-4 text-blue-600" />
+                        <TrendingUp className="h-4 w-4 text-primary" />
                         <span>Últimos 30 dias</span>
                       </div>
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                      <Badge variant="secondary" className="bg-primary/10 text-primary">
                         {stats.taxaOcupacao} agendamentos
                       </Badge>
                     </div>
 
                     {/* Próximo agendamento */}
                     {stats.proximoAgendamento && (
-                      <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 p-2 rounded">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded">
                         <Clock className="h-4 w-4 flex-shrink-0" />
                         <span className="truncate">
                           Próximo: {formatDateTime(stats.proximoAgendamento.data, stats.proximoAgendamento.aulaInicio as NumeroAula)}
@@ -188,24 +188,24 @@ const MeusEspacos = () => {
 
                     {/* Estatísticas */}
                     <div className="grid grid-cols-2 gap-3 pt-3 border-t">
-                      <div className="text-center p-2 bg-blue-50 rounded">
-                        <div className="text-xl font-bold text-blue-600">{stats.total}</div>
-                        <div className="text-xs text-gray-600">Total</div>
+                      <div className="text-center p-2 bg-primary/10 rounded">
+                        <div className="text-xl font-bold text-primary">{stats.total}</div>
+                        <div className="text-xs text-muted-foreground">Total</div>
                       </div>
-                      <div className="text-center p-2 bg-orange-50 rounded">
-                        <div className="text-xl font-bold text-orange-600">{stats.pendentes}</div>
-                        <div className="text-xs text-gray-600">Pendentes</div>
+                      <div className="text-center p-2 bg-warning/10 rounded">
+                        <div className="text-xl font-bold text-warning">{stats.pendentes}</div>
+                        <div className="text-xs text-muted-foreground">Pendentes</div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="text-center p-2 bg-green-50 rounded">
-                        <div className="text-xl font-bold text-green-600">{stats.aprovados}</div>
-                        <div className="text-xs text-gray-600">Aprovados</div>
+                      <div className="text-center p-2 bg-success/10 rounded">
+                        <div className="text-xl font-bold text-success">{stats.aprovados}</div>
+                        <div className="text-xs text-muted-foreground">Aprovados</div>
                       </div>
-                      <div className="text-center p-2 bg-purple-50 rounded">
-                        <div className="text-xl font-bold text-purple-600">{stats.proximos}</div>
-                        <div className="text-xs text-gray-600">Próximos</div>
+                      <div className="text-center p-2 bg-chart-5/10 rounded">
+                        <div className="text-xl font-bold text-chart-5">{stats.proximos}</div>
+                        <div className="text-xs text-muted-foreground">Próximos</div>
                       </div>
                     </div>
                   </CardContent>

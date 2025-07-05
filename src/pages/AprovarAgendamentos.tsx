@@ -23,10 +23,13 @@ const AprovarAgendamentos = () => {
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
   const [selectedConflict, setSelectedConflict] = useState<number | null>(null);
 
-  const meusEspacos = espacos.filter(e => usuario?.espacos?.includes(e.id));
-  const agendamentosMeusEspacos = agendamentos.filter(a => 
-    meusEspacos.some(e => e.id === a.espacoId)
-  );
+  const meusEspacos = usuario?.tipo === 'admin'
+    ? espacos
+    : espacos.filter(e => usuario?.espacos?.includes(e.id));
+
+  const agendamentosMeusEspacos = usuario?.tipo === 'admin'
+    ? agendamentos
+    : agendamentos.filter(a => meusEspacos.some(e => e.id === a.espacoId));
 
   // Detectar conflitos entre agendamentos pendentes
   const detectConflicts = () => {
@@ -270,8 +273,8 @@ const AprovarAgendamentos = () => {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Filtrar por status</h3>
-              <p className="text-sm text-gray-600">Visualize agendamentos por status</p>
+              <h3 className="text-lg font-semibold text-foreground">Filtrar por status</h3>
+              <p className="text-sm text-foreground/50">Visualize agendamentos por status</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button 
@@ -379,7 +382,7 @@ const AprovarAgendamentos = () => {
                 key: 'observacoes',
                 header: 'Observações',
                 accessor: (agendamento) => (
-                  <span className="text-sm text-gray-600 truncate block max-w-[150px]">
+                  <span className="text-sm text-foreground truncate block max-w-[150px]">
                     {agendamento.observacoes || '-'}
                   </span>
                 ),

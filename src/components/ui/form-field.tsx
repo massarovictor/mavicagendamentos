@@ -238,6 +238,7 @@ export const FormField: React.FC<FormFieldProps> = ({
           <Textarea
             {...commonProps}
             rows={rows}
+            className='text-foreground'
           />
         );
 
@@ -273,7 +274,7 @@ export const FormField: React.FC<FormFieldProps> = ({
             />
             <Label 
               htmlFor={name}
-              className="text-sm font-normal cursor-pointer"
+              className="text-sm font-normal cursor-pointer text-foreground"
             >
               {label}
             </Label>
@@ -286,7 +287,7 @@ export const FormField: React.FC<FormFieldProps> = ({
             <Input
               {...commonProps}
               type={showPassword ? 'text' : 'password'}
-              className={cn(getInputClasses(), 'pr-10')}
+              className={cn(getInputClasses(), 'pr-10, text-foreground')}
             />
             <button
               type="button"
@@ -295,9 +296,9 @@ export const FormField: React.FC<FormFieldProps> = ({
               tabIndex={-1}
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4 text-gray-400" />
+                <EyeOff className="h-4 w-4 text-popover-foreground" />
               ) : (
-                <Eye className="h-4 w-4 text-gray-400" />
+                <Eye className="h-4 w-4 text-popover-foreground" />
               )}
             </button>
           </div>
@@ -309,6 +310,7 @@ export const FormField: React.FC<FormFieldProps> = ({
             {...commonProps}
             type="number"
             min={min}
+            className='text-foreground'
             max={max}
             onChange={(e) => handleChange(e.target.value ? Number(e.target.value) : '')}
           />
@@ -319,6 +321,7 @@ export const FormField: React.FC<FormFieldProps> = ({
           <Input
             {...commonProps}
             type={type}
+            className='text-foreground'
           />
         );
     }
@@ -329,13 +332,13 @@ export const FormField: React.FC<FormFieldProps> = ({
       <div className={cn("space-y-2", className)}>
         {renderInput()}
         {error && (
-          <p className="text-sm text-red-600 flex items-center gap-1">
+          <p className="text-sm text-destructive flex items-center gap-1">
             <AlertCircle className="h-3 w-3" />
             {error}
           </p>
         )}
         {helpText && !error && (
-          <p className="text-sm text-gray-500">{helpText}</p>
+          <p className="text-sm text-foreground">{helpText}</p>
         )}
       </div>
     );
@@ -344,9 +347,9 @@ export const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center gap-2">
-        <Label htmlFor={name} className="text-sm font-medium text-gray-700">
+        <Label htmlFor={name} className="text-sm font-medium text-foreground">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-destructive ml-1">*</span>}
         </Label>
         {helpText && (
           <TooltipProvider>

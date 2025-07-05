@@ -39,7 +39,7 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
       {/* Logo completo da MAVIC */}
       <MavicCompleto 
         size={currentSize.logoSize} 
-        className="text-gray-800" 
+        className="text-foreground" 
       />
       
       {/* Subtitle apenas quando solicitado */}
@@ -47,7 +47,7 @@ const BrandLogo: React.FC<BrandLogoProps> = ({
         <p 
           className={cn(
             currentSize.subtitleText,
-            'text-gray-600 font-medium tracking-wide mt-2',
+            'text-foreground/80 font-medium tracking-wide mt-2',
             'drop-shadow-sm'
           )}
         >
