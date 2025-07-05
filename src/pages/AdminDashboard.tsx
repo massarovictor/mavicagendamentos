@@ -70,8 +70,6 @@ export default function AdminDashboard() {
           {
             label: "Total de Usuários",
             value: stats.totalUsuarios,
-            icon: Users,
-            color: "bg-card-foreground"
           },
           {
             label: "Espaços Ativos",
@@ -147,9 +145,6 @@ export default function AdminDashboard() {
           <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/usuarios')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
-                  <UserPlus className="w-5 h-5 text-primary" />
-                </div>
                 <h3 className="font-semibold text-foreground">Gerenciar Usuários</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
@@ -165,9 +160,6 @@ export default function AdminDashboard() {
           <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/espacos')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
-                  <Building2 className="w-5 h-5 text-primary" />
-                </div>
                 <h3 className="font-semibold text-foreground">Gerenciar Espaços</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
@@ -183,9 +175,6 @@ export default function AdminDashboard() {
           <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/aprovar-agendamentos')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
-                  <ClipboardCheck className="w-5 h-5 text-primary" />
-                </div>
                 <h3 className="font-semibold text-foreground">Aprovar Agendamentos</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
@@ -203,9 +192,6 @@ export default function AdminDashboard() {
           <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/todos-agendamentos')}>
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-accent group-hover:bg-accent/80 transition-colors">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                </div>
                 <h3 className="font-semibold text-foreground">Todos Agendamentos</h3>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
@@ -226,7 +212,6 @@ export default function AdminDashboard() {
         <Card className="bg-card text-card-foreground">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-foreground">
-              <Calendar className="w-5 h-5 text-primary" />
               Agendamentos Recentes
             </CardTitle>
           </CardHeader>
@@ -283,7 +268,6 @@ export default function AdminDashboard() {
         <Card className="bg-card text-card-foreground">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-foreground">
-              <Building2 className="w-5 h-5 text-primary" />
               Espaços Mais Utilizados
             </CardTitle>
           </CardHeader>
