@@ -103,8 +103,6 @@ const MeusAgendamentos = () => {
           {
             label: "Total",
             value: meusAgendamentos.length,
-            icon: Calendar,
-            color: "bg-primary"
           },
           {
             label: "Pendentes", 

@@ -72,26 +72,24 @@ const TodosAgendamentos = () => {
       {
         label: 'Total',
         value: agendamentos.length,
-        icon: Calendar,
-        color: 'bg-blue-500'
       },
       {
         label: 'Hoje',
         value: agendamentosHoje.length,
         icon: Clock,
-        color: 'bg-green-500'
+        color: 'bg-chart-1'
       },
       {
         label: 'Pendentes',
         value: pendentes.length,
         icon: AlertCircle,
-        color: 'bg-yellow-500'
+        color: 'bg-chart-3'
       },
       {
         label: 'Aprovados',
         value: aprovados.length,
         icon: Check,
-        color: 'bg-emerald-500'
+        color: 'bg-chart-2'
       }
     ];
   }, [agendamentos]);

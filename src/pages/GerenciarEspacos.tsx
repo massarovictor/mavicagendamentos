@@ -188,8 +188,6 @@ const GerenciarEspacos = () => {
     {
       label: "Total de Espaços",
       value: espacos.length,
-      icon: MapPin,
-      color: "bg-blue-500"
     },
     {
       label: "Espaços Ativos", 
@@ -224,7 +222,7 @@ const GerenciarEspacos = () => {
       <PageHeader 
         title="Gerenciar Espaços"
         subtitle="Crie, edite e gerencie os espaços do sistema"
-        icon={Building2}
+        icon={MapPin}
         stats={pageStats}
         actions={
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

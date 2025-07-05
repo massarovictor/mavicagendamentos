@@ -97,8 +97,6 @@ const GerenciarUsuarios = () => {
       {
         label: 'Total de Usuários',
         value: usuarios.length,
-        icon: Users,
-        color: 'bg-chart-1'
       },
       {
         label: 'Administradores',

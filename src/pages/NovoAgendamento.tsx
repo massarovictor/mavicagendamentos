@@ -262,8 +262,6 @@ const NovoAgendamento = () => {
       {
         label: "Espaços Disponíveis",
         value: espacosAtivos.length,
-        icon: Building2,
-        color: "bg-primary"
       },
       {
         label: "Meus Agendamentos Hoje",
