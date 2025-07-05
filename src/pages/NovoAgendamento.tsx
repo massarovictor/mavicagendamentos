@@ -264,19 +264,19 @@ const NovoAgendamento = () => {
         label: "Espaços Disponíveis",
         value: espacosAtivos.length,
         icon: Building2,
-        color: "bg-blue-500"
+        color: "bg-primary"
       },
       {
         label: "Meus Agendamentos Hoje",
         value: meusAgendamentosHoje.length,
         icon: Calendar,
-        color: "bg-green-500"
+        color: "bg-chart-4"
       },
       {
         label: "Total de Agendamentos",
         value: agendamentos.filter(a => a.usuarioId === usuario?.id).length,
         icon: Clock,
-        color: "bg-purple-500"
+        color: "bg-chart-5"
       }
     ];
   }, [espacosAtivos, agendamentos, usuario]);

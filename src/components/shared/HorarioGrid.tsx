@@ -131,10 +131,10 @@ export const HorarioGrid: React.FC<HorarioGridProps> = ({
               >
                 <div className="space-y-1">
                   <div className="text-center">
-                    <div className="font-medium text-gray-900 text-sm">
+                    <div className="font-medium text-foreground text-sm">
                       {aula}ª
                     </div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-foreground/70">
                       {horario.inicio}
                     </div>
                   </div>
