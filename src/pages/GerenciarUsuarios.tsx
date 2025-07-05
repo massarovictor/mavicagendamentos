@@ -98,25 +98,25 @@ const GerenciarUsuarios = () => {
         label: 'Total de Usuários',
         value: usuarios.length,
         icon: Users,
-        color: 'bg-blue-500'
+        color: 'bg-chart-1'
       },
       {
         label: 'Administradores',
         value: usuarios.filter(u => u.tipo === 'admin').length,
         icon: Shield,
-        color: 'bg-red-500'
+        color: 'bg-chart-5'
       },
       {
         label: 'Gestores',
         value: usuarios.filter(u => u.tipo === 'gestor').length,
         icon: Eye,
-        color: 'bg-purple-500'
+        color: 'bg-chart-2'
       },
       {
         label: 'Usuários Ativos',
         value: usuarios.filter(u => u.ativo).length,
         icon: User,
-        color: 'bg-green-500'
+        color: 'bg-chart-3'
       }
     ];
   }, [usuarios]);
@@ -558,7 +558,7 @@ const GerenciarUsuarios = () => {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <Label htmlFor="search" className="text-sm font-medium text-gray-700">Buscar usuários</Label>
+              <Label htmlFor="search" className="text-sm font-medium text-foreground/80">Buscar usuários</Label>
               <div className="relative mt-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
@@ -571,7 +571,7 @@ const GerenciarUsuarios = () => {
               </div>
             </div>
             <div className="sm:w-48">
-              <Label htmlFor="status" className="text-sm font-medium text-gray-700">Filtrar por tipo</Label>
+              <Label htmlFor="status" className="text-sm font-medium text-foreground/80">Filtrar por tipo</Label>
               <Select 
                 value={filters.filters.statusFilter || 'todos'} 
                 onValueChange={(value) => filters.updateFilter('statusFilter', value)}
@@ -626,7 +626,7 @@ const GerenciarUsuarios = () => {
                 key: 'email',
                 header: 'Email',
                 accessor: (usuario) => (
-                        <div className="text-sm text-gray-600">{usuario.email}</div>
+                        <div className="text-sm text-foreground/80">{usuario.email}</div>
                 ),
                 mobileLabel: 'Email',
                 hiddenOnMobile: true
@@ -646,18 +646,18 @@ const GerenciarUsuarios = () => {
                 header: 'Espaços',
                 accessor: (usuario) => {
                   if (usuario.tipo !== 'gestor' || !usuario.espacos?.length) {
-                    return <span className="text-sm text-gray-400">-</span>;
+                    return <span className="text-sm text-muted-foreground">-</span>;
                   }
                   const espacosGestor = espacos.filter(e => usuario.espacos?.includes(e.id));
                   return (
                     <div className="flex flex-wrap gap-1">
                       {espacosGestor.slice(0, 2).map((espaco) => (
-                        <Badge key={espaco.id} variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                        <Badge key={espaco.id} variant="outline" className="text-xs bg-accent text-accent-foreground border-border">
                           {espaco.nome}
                         </Badge>
                       ))}
                       {espacosGestor.length > 2 && (
-                        <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600">
+                        <Badge variant="outline" className="text-xs bg-muted text-muted-foreground border-border">
                           +{espacosGestor.length - 2}
                         </Badge>
                       )}
@@ -681,7 +681,7 @@ const GerenciarUsuarios = () => {
                 key: 'agendamentos',
                 header: 'Agendamentos',
                 accessor: (usuario) => (
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           {getAgendamentosCount(usuario.id)} agendamentos
                         </span>
                 ),
