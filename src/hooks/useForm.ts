@@ -1,11 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { z } from 'zod';
 
 interface UseFormOptions<T> {
   initialValues: T;
   schema?: z.ZodSchema<T>;
   onSubmit: (values: T) => Promise<void> | void;
-  persistenceKey?: string;
 }
 
 interface FormState<T> {
@@ -19,32 +18,10 @@ interface FormState<T> {
 export function useForm<T extends Record<string, any>>({
   initialValues,
   schema,
-  onSubmit,
-  persistenceKey
+  onSubmit
 }: UseFormOptions<T>) {
-  const getInitialState = useCallback(() => {
-    if (persistenceKey) {
-      try {
-        const savedState = window.localStorage.getItem(persistenceKey);
-        if (savedState) {
-          const parsedState = JSON.parse(savedState);
-          const initialStateKeys = Object.keys(initialValues);
-          const savedStateKeys = Object.keys(parsedState);
-
-          if (initialStateKeys.every(key => savedStateKeys.includes(key))) {
-            return { ...initialValues, ...parsedState };
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao carregar estado do formulário do localStorage:', error);
-        window.localStorage.removeItem(persistenceKey);
-      }
-    }
-    return initialValues;
-  }, [initialValues, persistenceKey]);
-
   const [formState, setFormState] = useState<FormState<T>>({
-    values: getInitialState(),
+    values: initialValues,
     errors: {},
     touched: {},
     isSubmitting: false,
@@ -171,22 +148,6 @@ export function useForm<T extends Record<string, any>>({
     return Object.values(formState.errors).some(error => error);
   }, [formState.errors]);
 
-  useEffect(() => {
-    if (persistenceKey) {
-      try {
-        window.localStorage.setItem(persistenceKey, JSON.stringify(formState.values));
-      } catch (error) {
-        console.error('Erro ao salvar estado do formulário no localStorage:', error);
-      }
-    }
-  }, [formState.values, persistenceKey]);
-
-  const clearPersistence = useCallback(() => {
-    if (persistenceKey) {
-      window.localStorage.removeItem(persistenceKey);
-    }
-  }, [persistenceKey]);
-
   return {
     values: formState.values,
     errors: formState.errors,
@@ -201,7 +162,6 @@ export function useForm<T extends Record<string, any>>({
     validateForm,
     handleSubmit,
     reset,
-    getFieldProps,
-    clearPersistence
+    getFieldProps
   };
 } 

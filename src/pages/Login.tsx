@@ -17,16 +17,6 @@ const Login = () => {
   const { login } = useAuth();
   const notifications = useNotifications();
 
-  const convertUsuario = (row: any): Usuario => ({
-    id: parseInt(row.id.replace(/-/g, '').substring(0, 8), 16),
-    nome: row.nome,
-    email: row.email,
-    tipo: row.tipo,
-    ativo: row.ativo,
-    espacos: row.espacos || undefined,
-    telefone: row.telefone || undefined,
-  });
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -43,25 +33,23 @@ const Login = () => {
         .from('usuarios')
         .select('*')
         .eq('email', email.toLowerCase().trim())
-        .eq('ativo', true)
         .single();
 
       if (error || !usuarioData) {
-        notifications.error("Erro de Login", "Usuário não encontrado ou inativo");
+        notifications.error("Erro de Login", "Usuário não encontrado");
         setLoading(false);
         return;
       }
 
-      // Converter dados do Supabase para o formato da aplicação
-      const usuario = convertUsuario(usuarioData);
+      // O login é permitido se o usuário for encontrado, sem verificar a senha.
+      const usuario: Usuario = usuarioData;
 
-      // Fazer login
       login(usuario);
       notifications.success("Login realizado", `Bem-vindo, ${usuario.nome}!`);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro no login:', error);
-      notifications.error("Erro", "Falha ao conectar com o servidor");
+      notifications.error("Erro de Login", error.message || "Falha no servidor");
     } finally {
       setLoading(false);
     }

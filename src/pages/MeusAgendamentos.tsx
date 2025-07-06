@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -215,151 +215,123 @@ const MeusAgendamentos = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 space-y-6">
-            <Card className="enhanced-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-muted-foreground" />
-                    Histórico Completo
-                </CardTitle>
-                <CardDescription>
-                    Mostrando {pagination.paginationInfo.startItem} a {pagination.paginationInfo.endItem} de {pagination.paginationInfo.totalItems} agendamentos
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveTable
-                    data={pagination.paginatedData}
-                    columns={[
-                    {
-                        key: 'espaco',
-                        header: 'Espaço',
-                        accessor: (agendamento) => getEspacoNome(agendamento.espacoId),
-                        mobileLabel: 'Espaço'
-                    },
-                    {
-                        key: 'data',
-                        header: 'Data',
-                        accessor: (agendamento) => formatDate(agendamento.data),
-                        mobileLabel: 'Data'
-                    },
-                    {
-                        key: 'horario',
-                        header: 'Horário',
-                        accessor: (agendamento) => formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula),
-                        mobileLabel: 'Horário',
-                        hiddenOnMobile: false
-                    },
-                    {
-                        key: 'status',
-                        header: 'Status',
-                        accessor: (agendamento) => getStatusBadge(agendamento.status),
-                        mobileLabel: 'Status'
-                    },
-                    {
-                        key: 'observacoes',
-                        header: 'Observações',
-                        accessor: (agendamento) => (
-                        <span className="text-sm text-muted-foreground truncate block max-w-[200px]">
-                            {agendamento.observacoes || '-'}
-                        </span>
-                        ),
-                        mobileLabel: 'Observações',
-                        hiddenOnMobile: true
-                    }
-                    ]}
-                    emptyState={
-                    <div className="text-center py-8">
-                        <div className="text-muted-foreground">
-                        <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p className="font-medium">Nenhum agendamento encontrado</p>
-                        <p className="text-sm">Tente ajustar os filtros ou criar um novo agendamento</p>
-                        </div>
-                    </div>
-                    }
-                />
-              </CardContent>
-            </Card>
-        </div>
+      <div className="space-y-6">
+        <Card className="enhanced-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-muted-foreground" />
+                Histórico Completo
+            </CardTitle>
+            <CardDescription>
+                Mostrando {pagination.paginationInfo.startItem} a {pagination.paginationInfo.endItem} de {pagination.paginationInfo.totalItems} agendamentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveTable
+                data={pagination.paginatedData}
+                columns={[
+                {
+                    key: 'espaco',
+                    header: 'Espaço',
+                    accessor: (agendamento) => getEspacoNome(agendamento.espacoId),
+                    mobileLabel: 'Espaço'
+                },
+                {
+                    key: 'data',
+                    header: 'Data',
+                    accessor: (agendamento) => formatDate(agendamento.data),
+                    mobileLabel: 'Data'
+                },
+                {
+                    key: 'horario',
+                    header: 'Horário',
+                    accessor: (agendamento) => formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula),
+                    mobileLabel: 'Horário',
+                },
+                {
+                    key: 'status',
+                    header: 'Status',
+                    accessor: (agendamento) => getStatusBadge(agendamento.status),
+                    mobileLabel: 'Status'
+                },
+                ]}
+            />
+          </CardContent>
+           <CardFooter className="flex justify-end">
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={pagination.previousPage} disabled={!pagination.canGoPrevious}>Anterior</Button>
+                <span className="text-sm">{pagination.currentPage} / {pagination.totalPages}</span>
+                <Button variant="outline" size="sm" onClick={pagination.nextPage} disabled={!pagination.canGoNext}>Próximo</Button>
+            </div>
+          </CardFooter>
+        </Card>
 
-        <div className="space-y-6">
-            <Card className="enhanced-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-status-success" />
-                  Próximos Agendamentos
-                </CardTitle>
-                <CardDescription>Seus agendamentos aprovados mais próximos</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {proximosAgendamentos.length > 0 ? (
-                  <div className="space-y-3">
-                    {proximosAgendamentos.map((agendamento) => (
-                      <div key={agendamento.id} className="p-3 bg-status-success-subtle border border-status-success-border rounded-lg hover:shadow-sm transition-shadow">
-                        <div className="font-semibold text-status-success-foreground">
-                          {getEspacoNome(agendamento.espacoId)}
-                        </div>
-                        <div className="text-sm text-status-success-foreground/80">
-                          {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
-                        </div>
-                        {agendamento.observacoes && (
-                          <div className="text-xs text-status-success-foreground/80 mt-1 truncate">
-                            {agendamento.observacoes}
-                          </div>
-                        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="enhanced-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-muted-foreground" />
+                Próximos Agendamentos
+              </CardTitle>
+              <CardDescription>Seus agendamentos aprovados mais próximos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {proximosAgendamentos.length > 0 ? (
+                <ul className="space-y-4">
+                  {proximosAgendamentos.map(agendamento => (
+                    <li key={agendamento.id} className="flex items-start gap-4 p-3 bg-muted/50 rounded-lg">
+                      <div className="p-2 bg-primary/10 rounded-md">
+                          <Calendar className="w-5 h-5 icon-accent" />
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="font-medium">Nenhum agendamento próximo</p>
-                      <p className="text-sm">Agendamentos aprovados aparecerão aqui</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <div>
+                        <p className="font-semibold">{getEspacoNome(agendamento.espacoId)}</p>
+                        <p className="text-sm text-muted-foreground">{formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-center py-8">
+                    <Calendar className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="font-semibold">Nenhum agendamento próximo</p>
+                    <p className="text-sm text-muted-foreground">Agendamentos aprovados aparecerão aqui</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-            <Card className="enhanced-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-status-warning" />
-                  Pendentes de Aprovação
-                </CardTitle>
-                <CardDescription>Agendamentos aguardando sua aprovação</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {agendamentosPendentes.length > 0 ? (
-                  <div className="space-y-3">
-                    {agendamentosPendentes.slice(0, 3).map((agendamento) => (
-                      <div key={agendamento.id} className="p-3 bg-status-warning-subtle border border-status-warning-border rounded-lg hover:shadow-sm transition-shadow">
-                        <div className="font-semibold text-status-warning-foreground">
-                          {getEspacoNome(agendamento.espacoId)}
-                        </div>
-                        <div className="text-sm text-status-warning-foreground/80">
-                          {formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)} ({formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)})
-                        </div>
-                        {agendamento.observacoes && (
-                          <div className="text-xs text-status-warning-foreground/80 mt-1 truncate">
-                            {agendamento.observacoes}
-                          </div>
-                        )}
+          <Card className="enhanced-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-muted-foreground" />
+                Pendentes de Aprovação
+              </CardTitle>
+              <CardDescription>Agendamentos aguardando sua aprovação</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {agendamentosPendentes.length > 0 ? (
+                <ul className="space-y-4">
+                  {agendamentosPendentes.slice(0, 3).map(agendamento => (
+                    <li key={agendamento.id} className="flex items-start gap-4 p-3 bg-muted/50 rounded-lg">
+                      <div className="p-2 bg-status-warning/10 rounded-md">
+                          <Clock className="w-5 h-5 text-status-warning" />
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="text-muted-foreground">
-                      <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="font-medium">Nenhum agendamento pendente</p>
-                      <p className="text-sm">Seus agendamentos pendentes aparecerão aqui</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <div>
+                        <p className="font-semibold">{getEspacoNome(agendamento.espacoId)}</p>
+                        <p className="text-sm text-muted-foreground">{formatDateTime(agendamento.data, agendamento.aulaInicio as NumeroAula)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-center py-8">
+                    <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="font-semibold">Nenhum agendamento pendente</p>
+                    <p className="text-sm text-muted-foreground">Seus agendamentos pendentes aparecerão aqui</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

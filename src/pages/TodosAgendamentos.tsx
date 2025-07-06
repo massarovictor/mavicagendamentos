@@ -236,8 +236,7 @@ const TodosAgendamentos = () => {
         </CardContent>
       </Card>
 
-      <div className="dashboard-grid">
-        <div className="dashboard-main">
+      <div className="space-y-6">
           <Card className="enhanced-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -328,51 +327,17 @@ const TodosAgendamentos = () => {
                   }
                 ]}
                 emptyState={
-                  <div className="text-center py-8">
+                  <div className="text-center py-12">
                     <div className="text-muted-foreground">
-                      <List className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p className="font-medium">Nenhum agendamento encontrado</p>
-                      <p className="text-sm">Tente ajustar os filtros ou criar um novo agendamento</p>
+                      <p className="text-sm">Tente ajustar os filtros ou crie um novo agendamento.</p>
                     </div>
                   </div>
                 }
               />
             </CardContent>
           </Card>
-        </div>
-        <div className="dashboard-side">
-          <Card className="enhanced-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart className="w-5 h-5 icon-muted" />
-                Resumo de Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-status-success" />
-                  <span className="text-sm text-muted-foreground">Aprovados</span>
-                </div>
-                <span className="font-semibold">{agendamentos.filter(a => a.status === 'aprovado').length}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-status-warning" />
-                  <span className="text-sm text-muted-foreground">Pendentes</span>
-                </div>
-                <span className="font-semibold">{stats.pendentes}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-status-error" />
-                  <span className="text-sm text-muted-foreground">Rejeitados</span>
-                </div>
-                <span className="font-semibold">{agendamentos.filter(a => a.status === 'rejeitado').length}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );

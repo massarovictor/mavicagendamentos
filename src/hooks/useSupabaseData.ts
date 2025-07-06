@@ -113,49 +113,35 @@ export const useSupabaseData = () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Carregar usuários
-      const { data: usuariosData, error: usuariosError } = await supabase
-        .from('usuarios')
-        .select('*')
-        .order('created_at');
+      const [
+        usuariosResponse,
+        espacosResponse,
+        agendamentosResponse,
+        agendamentosFixosResponse
+      ] = await Promise.all([
+        supabase.from('usuarios').select('*').order('created_at'),
+        supabase.from('espacos').select('*').order('id'),
+        supabase.from('agendamentos').select('*').order('created_at', { ascending: false }),
+        supabase.from('agendamentos_fixos').select('*').order('created_at', { ascending: false })
+      ]);
 
-      if (usuariosError) throw usuariosError;
+      if (usuariosResponse.error) throw usuariosResponse.error;
+      if (espacosResponse.error) throw espacosResponse.error;
+      if (agendamentosResponse.error) throw agendamentosResponse.error;
+      if (agendamentosFixosResponse.error) throw agendamentosFixosResponse.error;
 
-      // Criar mapeamento UUID <-> ID numérico
+      // Processar usuários e criar o mapa de UUID
       const uuidMap = new Map<number, string>();
-      const usuarios = usuariosData.map(row => {
+      const usuarios = usuariosResponse.data.map(row => {
         const usuario = convertUsuario(row);
         uuidMap.set(usuario.id, row.id);
         return usuario;
       });
       setUserUuidMap(uuidMap);
 
-      // Carregar espaços
-      const { data: espacosData, error: espacosError } = await supabase
-        .from('espacos')
-        .select('*')
-        .order('id');
-
-      if (espacosError) throw espacosError;
-      const espacos = espacosData.map(convertEspaco);
-
-      // Carregar agendamentos
-      const { data: agendamentosData, error: agendamentosError } = await supabase
-        .from('agendamentos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (agendamentosError) throw agendamentosError;
-      const agendamentos = agendamentosData.map(convertAgendamento);
-
-      // Carregar agendamentos fixos
-      const { data: agendamentosFixosData, error: agendamentosFixosError } = await supabase
-        .from('agendamentos_fixos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (agendamentosFixosError) throw agendamentosFixosError;
-      const agendamentosFixos = agendamentosFixosData.map(convertAgendamentoFixo);
+      const espacos = espacosResponse.data.map(convertEspaco);
+      const agendamentos = agendamentosResponse.data.map(convertAgendamento);
+      const agendamentosFixos = agendamentosFixosResponse.data.map(convertAgendamentoFixo);
 
       setState({
         usuarios,

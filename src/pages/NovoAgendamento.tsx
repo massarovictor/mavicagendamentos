@@ -18,7 +18,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Clock, Building2, User, AlertTriangle, CheckCircle, Info, Plus, ListChecks } from 'lucide-react';
 import { AULAS_HORARIOS, NumeroAula, Agendamento } from '@/types';
-import { formatAulas } from '@/utils/format';
+import { formatAulas, formatDate } from '@/utils/format';
 import { BusinessValidations, DataIntegrityValidations, SecurityValidations, agendamentoSchema } from '@/utils/validations';
 import { HorarioGrid } from '@/components/shared/HorarioGrid';
 
@@ -73,6 +73,29 @@ const NovoAgendamento = () => {
   const notifications = useNotifications();
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
+  const createLocalDate = (dateString: string): Date | null => {
+    if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return null;
+    }
+    const parts = dateString.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const date = new Date(year, month, day);
+    if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+      return date;
+    }
+    return null;
+  };
+
+  // Função auxiliar para converter Date para 'YYYY-MM-DD' de forma segura
+  const toISODateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const espacosAtivos = useMemo(() => 
     espacos.filter(e => e.ativo), 
     [espacos]
@@ -92,12 +115,11 @@ const NovoAgendamento = () => {
   const form = useForm<AgendamentoFormData>({
     initialValues: {
       espacoId: 0,
-      data: new Date().toISOString().split('T')[0], // Data de hoje como padrão
+      data: toISODateString(new Date()), // Usa a função auxiliar para a data atual
       aulaInicio: 1,
       aulaFim: 1,
       observacoes: ''
     },
-    persistenceKey: 'form-novo-agendamento',
     onSubmit: async (values) => {
       // Validações de formulário
       const formErrors = validateForm(values);
@@ -155,7 +177,6 @@ const NovoAgendamento = () => {
         const success = await actions.addAgendamento(novoAgendamento);
         if (success) {
           notifications.agendamento.created();
-          form.clearPersistence(); // Limpa o localStorage
           form.reset();
         } else {
           notifications.error('Erro', 'Falha ao salvar agendamento. Tente novamente.');
@@ -175,9 +196,11 @@ const NovoAgendamento = () => {
       errors.push(...securityCheck.errors);
     }
 
-    // Validar usuário ativo
-    const usuarioError = BusinessValidations.validateUsuarioAtivo(usuario!.id, usuarios);
-    if (usuarioError) errors.push(usuarioError);
+    // A validação do usuário só deve ocorrer se a lista de usuários já foi carregada.
+    if (usuarios.length > 0) {
+      const usuarioError = BusinessValidations.validateUsuarioAtivo(usuario!.id, usuarios);
+      if (usuarioError) errors.push(usuarioError);
+    }
 
     // Validar disponibilidade do espaço
     const espacoError = BusinessValidations.validateEspacoDisponivel(values.espacoId, espacos);
@@ -224,8 +247,8 @@ const NovoAgendamento = () => {
 
   // Verificar se o horário está disponível para preview
   const isHorarioDisponivel = useMemo(() => {
-    if (!form.values.espacoId || !form.values.data || !form.values.aulaInicio || !form.values.aulaFim) {
-      return true; // Não mostrar erro até ter dados completos
+    if (loading || !form.values.espacoId || !form.values.data || !form.values.aulaInicio || !form.values.aulaFim) {
+      return true; // Não mostrar erro até ter dados completos e não estar carregando
     }
 
     return BusinessValidations.isHorarioDisponivel(
@@ -236,11 +259,11 @@ const NovoAgendamento = () => {
       agendamentos,
       agendamentosFixos
     );
-  }, [form.values.espacoId, form.values.data, form.values.aulaInicio, form.values.aulaFim, agendamentos, agendamentosFixos]);
+  }, [form.values.espacoId, form.values.data, form.values.aulaInicio, form.values.aulaFim, agendamentos, agendamentosFixos, loading]);
 
   // Obter conflitos para exibição
   const conflicts = useMemo(() => {
-    if (!form.values.espacoId || !form.values.data || !form.values.aulaInicio || !form.values.aulaFim) {
+    if (loading || !form.values.espacoId || !form.values.data || !form.values.aulaInicio || !form.values.aulaFim) {
       return { agendamentosConflitantes: [], agendamentosFixosConflitantes: [], hasConflicts: false };
     }
 
@@ -249,7 +272,7 @@ const NovoAgendamento = () => {
       agendamentos,
       agendamentosFixos
     );
-  }, [form.values, agendamentos, agendamentosFixos]);
+  }, [form.values, agendamentos, agendamentosFixos, loading]);
 
   // Obter estatísticas para o PageHeader
   const pageStats = useMemo(() => {
@@ -417,27 +440,21 @@ const NovoAgendamento = () => {
                         >
                           <Calendar className="mr-2 h-4 w-4" />
                           <span className="truncate">
-                            {form.values.data ? (
-                              new Date(form.values.data + 'T12:00:00').toLocaleDateString('pt-BR')
-                            ) : (
-                              "Selecione uma data"
-                            )}
+                            {form.values.data ? formatDate(form.values.data) : "Selecione uma data"}
                           </span>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                         <CalendarComponent
                           mode="single"
-                          selected={form.values.data ? new Date(form.values.data + 'T12:00:00') : undefined}
+                          selected={createLocalDate(form.values.data) || undefined}
                           onSelect={(date) => {
                             if (date) {
-                              const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-                              form.setValue('data', localDate.toISOString().split('T')[0]);
+                              form.setValue('data', toISODateString(date));
                               setCalendarOpen(false);
                             }
                           }}
-                          fromDate={new Date()}
-                          toDate={new Date(Date.now() + 6 * 30 * 24 * 60 * 60 * 1000)}
+                          disabled={(date) => date < new Date(new Date().setDate(new Date().getDate() - 1))}
                           initialFocus
                         />
                       </PopoverContent>
@@ -510,10 +527,14 @@ const NovoAgendamento = () => {
               <Button 
                 type="submit" 
                   className="w-full elegant-button" 
-                  disabled={!isHorarioDisponivel || !form.values.espacoId}
+                  disabled={loading || !isHorarioDisponivel || !form.values.espacoId}
               >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Solicitar Agendamento
+                  {loading ? (
+                    <LoadingSpinner className="h-4 w-4 mr-2" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                  )}
+                  {loading ? 'Carregando dados...' : 'Solicitar Agendamento'}
               </Button>
             </form>
           </CardContent>

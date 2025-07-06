@@ -1,6 +1,28 @@
 import { Agendamento, Espaco, Usuario, AgendamentoFixo, AULAS_HORARIOS, NumeroAula } from '@/types';
 import { z } from 'zod';
 
+/**
+ * Cria um objeto Date a partir de uma string 'YYYY-MM-DD' no fuso horário local,
+ * evitando a conversão automática para UTC.
+ * @param dateString A data no formato 'YYYY-MM-DD'.
+ * @returns Um objeto Date local ou null se a string for inválida.
+ */
+const createLocalDate = (dateString: string): Date | null => {
+  if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return null;
+  }
+  const parts = dateString.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // Meses em JS são 0-indexados
+  const day = parseInt(parts[2], 10);
+  const date = new Date(year, month, day);
+  // Garante que a data criada corresponde aos componentes, evitando estouro de mês/dia
+  if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+    return date;
+  }
+  return null;
+};
+
 // Schemas de validação usando Zod
 export const usuarioSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -41,8 +63,8 @@ export const agendamentoSchema = z.object({
   data: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data deve estar no formato YYYY-MM-DD')
     .refine(data => {
-      const date = new Date(data);
-      return !isNaN(date.getTime());
+      const date = createLocalDate(data);
+      return date !== null && !isNaN(date.getTime());
     }, 'Data deve ser válida'),
   aulaInicio: z.number().min(1, 'Aula deve ser entre 1 e 9').max(9, 'Aula deve ser entre 1 e 9'),
   aulaFim: z.number().min(1, 'Aula deve ser entre 1 e 9').max(9, 'Aula deve ser entre 1 e 9'),
@@ -63,7 +85,11 @@ export const agendamentoFixoSchema = z.object({
 }).refine(data => data.aulaInicio <= data.aulaFim, {
   message: 'Aula de início deve ser anterior ou igual à aula de fim',
   path: ['aulaFim']
-}).refine(data => new Date(data.dataInicio) < new Date(data.dataFim), {
+}).refine(data => {
+  const inicio = createLocalDate(data.dataInicio);
+  const fim = createLocalDate(data.dataFim);
+  return inicio && fim && inicio < fim;
+}, {
   message: 'Data de início deve ser anterior à data de fim',
   path: ['dataFim']
 });
@@ -355,8 +381,8 @@ export class BusinessValidations {
       return 'Data é obrigatória';
     }
 
-    const dataAgendamento = new Date(data);
-    if (isNaN(dataAgendamento.getTime())) {
+    const dataAgendamento = createLocalDate(data);
+    if (!dataAgendamento) {
       return 'Data inválida';
     }
 
@@ -434,24 +460,28 @@ export class BusinessValidations {
       return 'Dados do agendamento inválidos';
     }
 
-    const dataAgendamento = new Date(novoAgendamento.data);
-    if (isNaN(dataAgendamento.getTime())) {
+    const dataAgendamento = createLocalDate(novoAgendamento.data);
+    if (!dataAgendamento) {
       return 'Data do agendamento inválida';
     }
 
     const diaSemana = dataAgendamento.getDay();
 
-    const conflitoFixo = agendamentosFixos.find(af => 
-      af.ativo &&
-      af.espacoId === novoAgendamento.espacoId &&
-      af.diasSemana.includes(diaSemana) &&
-      dataAgendamento >= new Date(af.dataInicio) &&
-      dataAgendamento <= new Date(af.dataFim) &&
-      this.aulasConflitam(
-        { inicio: novoAgendamento.aulaInicio, fim: novoAgendamento.aulaFim },
-        { inicio: af.aulaInicio, fim: af.aulaFim }
-      )
-    );
+    const conflitoFixo = agendamentosFixos.find(af => {
+      const dataInicioFixo = createLocalDate(af.dataInicio);
+      const dataFimFixo = createLocalDate(af.dataFim);
+      if (!dataInicioFixo || !dataFimFixo) return false;
+
+      return af.ativo &&
+        af.espacoId === novoAgendamento.espacoId &&
+        af.diasSemana.includes(diaSemana) &&
+        dataAgendamento >= dataInicioFixo &&
+        dataAgendamento <= dataFimFixo &&
+        this.aulasConflitam(
+          { inicio: novoAgendamento.aulaInicio, fim: novoAgendamento.aulaFim },
+          { inicio: af.aulaInicio, fim: af.aulaFim }
+        );
+    });
 
     return conflitoFixo ? 'Este horário está bloqueado por um agendamento fixo' : null;
   }
@@ -472,8 +502,8 @@ export class BusinessValidations {
       return { agendamentosConflitantes: [], agendamentosFixosConflitantes: [], hasConflicts: false };
     }
 
-    const dataAgendamento = new Date(agendamento.data);
-    if (isNaN(dataAgendamento.getTime())) {
+    const dataAgendamento = createLocalDate(agendamento.data);
+    if (!dataAgendamento) {
       return { agendamentosConflitantes: [], agendamentosFixosConflitantes: [], hasConflicts: false };
     }
 
@@ -490,17 +520,21 @@ export class BusinessValidations {
       )
     );
 
-    const agendamentosFixosConflitantes = agendamentosFixos.filter(af => 
-      af.ativo &&
-      af.espacoId === agendamento.espacoId &&
-      af.diasSemana.includes(diaSemana) &&
-      dataAgendamento >= new Date(af.dataInicio) &&
-      dataAgendamento <= new Date(af.dataFim) &&
-      this.aulasConflitam(
-        { inicio: agendamento.aulaInicio, fim: agendamento.aulaFim },
-        { inicio: af.aulaInicio, fim: af.aulaFim }
-      )
-    );
+    const agendamentosFixosConflitantes = agendamentosFixos.filter(af => {
+      const dataInicioFixo = createLocalDate(af.dataInicio);
+      const dataFimFixo = createLocalDate(af.dataFim);
+      if (!dataInicioFixo || !dataFimFixo) return false;
+
+      return af.ativo &&
+        af.espacoId === agendamento.espacoId &&
+        af.diasSemana.includes(diaSemana) &&
+        dataAgendamento >= dataInicioFixo &&
+        dataAgendamento <= dataFimFixo &&
+        this.aulasConflitam(
+          { inicio: agendamento.aulaInicio, fim: agendamento.aulaFim },
+          { inicio: af.aulaInicio, fim: af.aulaFim }
+        )
+    });
 
     return {
       agendamentosConflitantes,
@@ -532,8 +566,6 @@ export class BusinessValidations {
     return !hasApprovedConflicts && !hasFixedConflicts;
   }
 
-
-
   private static aulasConflitam(
     aulas1: { inicio: number; fim: number },
     aulas2: { inicio: number; fim: number }
@@ -545,7 +577,8 @@ export class BusinessValidations {
 // Utilitários de formatação
 export class FormatUtils {
   static formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('pt-BR');
+    const localDate = createLocalDate(date);
+    return localDate ? localDate.toLocaleDateString('pt-BR') : 'Data inválida';
   }
 
   static formatAula(aula: number): string {
@@ -561,7 +594,9 @@ export class FormatUtils {
   static formatDateTime(date: string, aula: number): string {
     const horario = AULAS_HORARIOS[aula as NumeroAula];
     const horarioStr = horario ? ` às ${horario.inicio}` : ` na ${aula}ª aula`;
-    return `${this.formatDate(date)}${horarioStr}`;
+    const localDate = createLocalDate(date);
+    const dateStr = localDate ? localDate.toLocaleDateString('pt-BR') : 'Data inválida';
+    return `${dateStr}${horarioStr}`;
   }
 
   static formatAulaRange(aulaInicio: number, aulaFim: number): string {

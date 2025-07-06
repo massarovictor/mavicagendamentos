@@ -46,7 +46,7 @@ const GestorDashboard = () => {
     <div className="max-w-7xl mx-auto space-y-10">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h1 className="section-title text-balance flex items-center gap-3"><UserCog className="w-8 h-8 icon-accent"/>Dashboard do Gestor</h1>
+          <h1 className="section-title text-balance flex items-center gap-3">Dashboard do Gestor</h1>
           <p className="subtle-text">Gerencie seus espaços e agendamentos com uma visão geral.</p>
         </div>
       </div>
@@ -99,7 +99,7 @@ const GestorDashboard = () => {
       <Card className="enhanced-card">
         <CardContent className="refined-spacing">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2"><Settings className="w-5 h-5 icon-muted" /><h2 className="card-title">Meus Espaços Gerenciados</h2></div>
+            <div className="flex items-center gap-2"><h2 className="card-title">Meus Espaços Gerenciados</h2></div>
             <Link to="/gerenciar-espacos"><button className="subtle-text text-sm font-semibold hover:text-primary">Ver todos</button></Link>
           </div>
           {meusEspacos.length === 0 ? (

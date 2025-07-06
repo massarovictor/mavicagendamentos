@@ -26,11 +26,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
       const usuario = JSON.parse(savedUser);
+      if (typeof usuario.id === 'string' && usuario.id.includes('-')) {
+        usuario.id = parseInt(usuario.id.replace(/-/g, '').substring(0, 8), 16);
+      }
       setAuthState({ usuario, isLoggedIn: true });
     }
   }, []);
 
   const login = (usuario: Usuario) => {
+    if (typeof usuario.id === 'string' && usuario.id.includes('-')) {
+      usuario.id = parseInt(usuario.id.replace(/-/g, '').substring(0, 8), 16);
+    }
     localStorage.setItem('currentUser', JSON.stringify(usuario));
     setAuthState({ usuario, isLoggedIn: true });
   };

@@ -53,7 +53,7 @@ const UsuarioDashboard = () => {
     <div className="max-w-7xl mx-auto space-y-10">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h1 className="section-title text-balance flex items-center gap-3"><User className="w-8 h-8 icon-accent"/>Meu Dashboard</h1>
+          <h1 className="section-title text-balance flex items-center gap-3">Meu Dashboard</h1>
           <p className="subtle-text">Visualize seus agendamentos e explore os espaços disponíveis.</p>
         </div>
         <Link to="/novo-agendamento">
@@ -93,7 +93,7 @@ const UsuarioDashboard = () => {
         <Card className="enhanced-card">
           <CardContent className="refined-spacing">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2"><Settings className="w-5 h-5 icon-muted" /><h2 className="card-title">Espaços Disponíveis</h2></div>
+              <div className="flex items-center gap-2"><h2 className="card-title">Espaços Disponíveis</h2></div>
               <Link to="/espacos-disponiveis"><button className="subtle-text text-sm font-semibold hover:text-primary">Ver todos</button></Link>
             </div>
             <div className="space-y-3">

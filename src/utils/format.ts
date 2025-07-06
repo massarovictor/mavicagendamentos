@@ -1,6 +1,27 @@
 import { AULAS_HORARIOS, NumeroAula } from '@/types';
 
 /**
+ * Cria um objeto Date a partir de uma string 'YYYY-MM-DD' no fuso horário local,
+ * evitando a conversão automática para UTC.
+ * @param dateString A data no formato 'YYYY-MM-DD'.
+ * @returns Um objeto Date local ou null se a string for inválida.
+ */
+const createLocalDate = (dateString: string): Date | null => {
+  if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return null;
+  }
+  const parts = dateString.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1; // Meses em JS são 0-indexados
+  const day = parseInt(parts[2], 10);
+  const date = new Date(year, month, day);
+  if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+    return date;
+  }
+  return null;
+};
+
+/**
  * Formata um intervalo de aulas para exibição
  * @param aulaInicio - Número da aula inicial (1-9)
  * @param aulaFim - Número da aula final (1-9)
@@ -26,7 +47,18 @@ export function formatAulas(aulaInicio: NumeroAula, aulaFim: NumeroAula): string
  * @returns String formatada como "dd/mm/aaaa"
  */
 export function formatDate(data: string): string {
-  return new Date(data).toLocaleDateString('pt-BR');
+  const localDate = createLocalDate(data);
+
+  if (!localDate) {
+    return "Data inválida";
+  }
+
+  return localDate.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
 /**
@@ -36,7 +68,10 @@ export function formatDate(data: string): string {
  * @returns String formatada como "dd/mm/aaaa - 1ª aula (07:20 - 08:10)"
  */
 export function formatDateTime(data: string, aula: NumeroAula): string {
-  const dataFormatada = formatDate(data);
+  const localDate = createLocalDate(data);
+  if (!localDate) return "Data/hora inválida";
+  
+  const dataFormatada = localDate.toLocaleDateString('pt-BR');
   const horario = AULAS_HORARIOS[aula];
   
   if (!horario) {
