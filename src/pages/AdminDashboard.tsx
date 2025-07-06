@@ -1,326 +1,350 @@
-import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { PageHeader } from '@/components/ui/page-header';
+import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-state';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { Link } from 'react-router-dom';
+import { formatDate } from '@/utils/format';
 import { 
+  Plus, 
+  ArrowRight, 
   Users, 
   Building2, 
   Calendar, 
+  Clock, 
+  CheckCircle, 
   AlertTriangle, 
-  Settings,
-  UserPlus,
-  ClipboardCheck,
-  Activity,
-  Clock,
-  CheckCircle,
   XCircle,
-  ChevronRight,
-  BarChart3
+  TrendingUp,
+  Activity,
+  Settings
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { formatAulas } from '@/utils/format';
-import { NumeroAula } from '@/types';
 
-export default function AdminDashboard() {
-  const { usuarios, espacos, agendamentos, agendamentosFixos, loading } = useSupabaseData();
-  const navigate = useNavigate();
+const AdminDashboard = () => {
+  const { usuarios, espacos, agendamentos, loading } = useSupabaseData();
 
-  // Estatísticas
-  const stats = {
-    totalUsuarios: usuarios.length,
-    usuariosAtivos: usuarios.filter(u => u.ativo).length,
-    totalEspacos: espacos.length,
-    espacosAtivos: espacos.filter(e => e.ativo).length,
-    totalAgendamentos: agendamentos.length,
-    agendamentosPendentes: agendamentos.filter(a => a.status === 'pendente').length,
-    agendamentosAprovados: agendamentos.filter(a => a.status === 'aprovado').length,
-    agendamentosRejeitados: agendamentos.filter(a => a.status === 'rejeitado').length,
-    agendamentosFixos: agendamentosFixos.length
+  const stats = useMemo(() => {
+    const totalUsuarios = usuarios.length;
+    const usuariosAtivos = usuarios.filter(u => u.ativo).length;
+    const espacosAtivos = espacos.filter(e => e.ativo).length;
+    const totalAgendamentos = agendamentos.length;
+    
+    const agendamentosPendentes = agendamentos.filter(a => a.status === 'pendente').length;
+    const agendamentosAprovados = agendamentos.filter(a => a.status === 'aprovado').length;
+    const agendamentosRejeitados = agendamentos.filter(a => a.status === 'rejeitado').length;
+    
+    const agendamentosHoje = agendamentos.filter(a => 
+      a.data === new Date().toISOString().split('T')[0]
+    ).length;
+
+    return {
+      totalUsuarios,
+      usuariosAtivos,
+      espacosAtivos,
+      totalAgendamentos,
+      agendamentosPendentes,
+      agendamentosAprovados,
+      agendamentosRejeitados,
+      agendamentosHoje
+    };
+  }, [usuarios, espacos, agendamentos]);
+
+  const agendamentosRecentes = useMemo(() => {
+    return agendamentos
+      .sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime())
+      .slice(0, 5);
+  }, [agendamentos]);
+
+  const espacosMaisUtilizados = useMemo(() => {
+    const espacosCount = espacos.map(espaco => {
+      const count = agendamentos.filter(a => a.espacoId === espaco.id).length;
+      return { ...espaco, count };
+    }).sort((a, b) => b.count - a.count).slice(0, 3);
+    
+    return espacosCount;
+  }, [espacos, agendamentos]);
+
+  const getStatusBadge = (status: string) => {
+    const baseClass = "text-xs font-semibold px-2.5 py-1 rounded-full border flex items-center gap-1.5";
+    switch (status) {
+      case 'aprovado':
+        return (
+          <span className={`${baseClass} status-success`}>
+            <CheckCircle className="w-3.5 h-3.5" />
+            Aprovado
+          </span>
+        );
+      case 'rejeitado':
+        return (
+          <span className={`${baseClass} status-error`}>
+            <XCircle className="w-3.5 h-3.5" />
+            Rejeitado
+          </span>
+        );
+      case 'pendente':
+        return (
+          <span className={`${baseClass} status-warning`}>
+            <Clock className="w-3.5 h-3.5" />
+            Pendente
+          </span>
+        );
+      default:
+        return <Badge variant="secondary" className="text-xs font-medium">{status}</Badge>;
+    }
   };
 
-  // Agendamentos recentes
-  const agendamentosRecentes = agendamentos
-    .sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime())
-    .slice(0, 5);
+  const getEspacoNome = (espacoId: number) => {
+    return espacos.find(e => e.id === espacoId)?.nome || 'Espaço não encontrado';
+  };
 
-  // Espaços mais utilizados
-  const espacosUtilizacao = espacos.map(espaco => {
-    const agendamentosEspaco = agendamentos.filter(a => a.espacoId === espaco.id);
-    return {
-      ...espaco,
-      utilizacao: agendamentosEspaco.length
-    };
-  }).sort((a, b) => b.utilizacao - a.utilizacao).slice(0, 3);
+  const getUsuarioNome = (usuarioId: number) => {
+    return usuarios.find(u => u.id === usuarioId)?.nome || 'Usuário não encontrado';
+  };
 
   if (loading) {
     return <LoadingSpinner message="Carregando painel administrativo..." />;
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <PageHeader 
-        title="Painel Administrativo"
-        subtitle="Visão geral completa do sistema de agendamentos"
-        icon={Settings}
-        stats={[
-          {
-            label: "Total de Usuários",
-            value: stats.totalUsuarios,
-          },
-          {
-            label: "Espaços Ativos",
-            value: stats.espacosAtivos,
-            icon: Building2,
-            color: "bg-chart-1"
-          },
-          {
-            label: "Total Agendamentos",
-            value: stats.totalAgendamentos,
-            icon: Calendar,
-            color: "bg-chart-2"
-          },
-          {
-            label: "Pendentes",
-            value: stats.agendamentosPendentes,
-            icon: AlertTriangle,
-            color: "bg-destructive"
-          }
-        ]}
-      />
-
-      {/* Status dos Agendamentos - Informação detalhada */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-card text-card-foreground hover:shadow-lg transition-shadow">
-          <CardContent className="p-6 text-center">
-            <CheckCircle className="w-10 h-10 text-green-600 mx-auto mb-3" />
-            <div className="text-3xl font-bold text-green-700 mb-1">
-              {stats.agendamentosAprovados}
-            </div>
-            <div className="text-sm text-green-600 font-medium">Agendamentos Aprovados</div>
-            <div className="text-xs text-green-600 mt-1">
-              {((stats.agendamentosAprovados / stats.totalAgendamentos) * 100 || 0).toFixed(1)}% do total
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card text-card-foreground hover:shadow-lg transition-shadow">
-          <CardContent className="p-6 text-center">
-            <Clock className="w-10 h-10 text-yellow-600 mx-auto mb-3" />
-            <div className="text-3xl font-bold text-yellow-700 mb-1">
-              {stats.agendamentosPendentes}
-            </div>
-            <div className="text-sm text-yellow-700 font-medium">Aguardando Aprovação</div>
-            <div className="text-xs text-yellow-700 mt-1">
-              {stats.agendamentosPendentes > 0 ? 'Requer atenção' : 'Tudo em dia'}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card text-card-foreground hover:shadow-lg transition-shadow">
-          <CardContent className="p-6 text-center">
-            <XCircle className="w-10 h-10 text-destructive mx-auto mb-3" />
-            <div className="text-3xl font-bold text-destructive mb-1">
-              {stats.agendamentosRejeitados}
-            </div>
-            <div className="text-sm text-destructive font-medium">Agendamentos Rejeitados</div>
-            <div className="text-xs text-destructive mt-1">
-              {((stats.agendamentosRejeitados / stats.totalAgendamentos) * 100 || 0).toFixed(1)}% do total
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Ações Rápidas */}
-
-      <div>
-        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-primary" />
-          Ações Rápidas
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/usuarios')}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="font-semibold text-foreground">Gerenciar Usuários</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Adicionar, editar ou remover usuários do sistema
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Acessar</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/espacos')}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="font-semibold text-foreground">Gerenciar Espaços</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Configurar e organizar os espaços disponíveis
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Acessar</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/aprovar-agendamentos')}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="font-semibold text-foreground">Aprovar Agendamentos</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Revisar e aprovar agendamentos pendentes
-              </p>
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="text-xs">
-                  {stats.agendamentosPendentes} pendente{stats.agendamentosPendentes !== 1 ? 's' : ''}
-                </Badge>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-all cursor-pointer group bg-card text-card-foreground" onClick={() => navigate('/todos-agendamentos')}>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <h3 className="font-semibold text-foreground">Todos Agendamentos</h3>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Visualizar todos os agendamentos do sistema
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Acessar</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </div>
-            </CardContent>
-          </Card>
+    <div className="max-w-7xl mx-auto space-y-10">
+      {/* Header com CTA Principal */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="section-title text-balance">Painel Administrativo</h1>
+          <p className="subtle-text">
+            Visão geral completa do sistema
+          </p>
         </div>
+        <Button asChild className="elegant-button">
+          <Link to="/novo-agendamento">
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Agendamento
+          </Link>
+        </Button>
       </div>
 
-      {/* Dashboard Inferior */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Agendamentos Recentes */}
-        <Card className="bg-card text-card-foreground">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              Agendamentos Recentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-80">
-              <div className="space-y-3">
-                {agendamentosRecentes.length > 0 ? (
-                  agendamentosRecentes.map((agendamento) => {
-                    const usuario = usuarios.find(u => u.id === agendamento.usuarioId);
-                    const espaco = espacos.find(e => e.id === agendamento.espacoId);
-                    return (
-                      <div key={agendamento.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors bg-background">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-sm text-foreground">{espaco?.nome}</p>
-                            <StatusBadge status={agendamento.status} />
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {usuario?.nome} • {formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(agendamento.data).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                    <p className="text-muted-foreground">Nenhum agendamento encontrado</p>
-                  </div>
-                )}
+      {/* Métricas Principais com Ícones Essenciais */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Users className="w-6 h-6 icon-accent" />
               </div>
-            </ScrollArea>
-            {agendamentosRecentes.length > 0 && (
-              <div className="pt-4 border-t mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/todos-agendamentos')}
-                  className="w-full"
-                >
-                  Ver Todos os Agendamentos
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+              <div className="metric-display">{stats.totalUsuarios}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Usuários</div>
+              <div className="caption-text">
+                {stats.usuariosAtivos} ativos
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-chart-2/10 rounded-lg">
+                <Building2 className="w-6 h-6 text-chart-2" />
+              </div>
+              <div className="metric-display">{stats.espacosAtivos}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Espaços</div>
+              <div className="caption-text">
+                {espacos.length} cadastrados
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-chart-3/10 rounded-lg">
+                <Calendar className="w-6 h-6 text-chart-3" />
+              </div>
+              <div className="metric-display">{stats.totalAgendamentos}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Agendamentos</div>
+              <div className="caption-text">
+                {stats.agendamentosHoje} hoje
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="enhanced-card border-status-warning-border/50">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-status-warning/10 rounded-lg">
+                <Clock className="w-6 h-6 text-status-warning" />
+              </div>
+              <div className="metric-display text-status-warning">{stats.agendamentosPendentes}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Pendentes</div>
+              <div className="caption-text">
+                {stats.agendamentosPendentes > 0 ? 'Requer ação' : 'Tudo em dia'}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Ações Rápidas sem Ícones */}
+      <Card className="enhanced-card">
+        <CardContent className="refined-spacing">
+          <div className="flex items-center gap-2 mb-6">
+            <Settings className="w-5 h-5 icon-muted" />
+            <h2 className="card-title">Ações Rápidas</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { 
+                title: "Aprovar Agendamentos", 
+                subtitle: `${stats.agendamentosPendentes} pendentes`,
+                href: "/aprovar-agendamentos",
+                urgent: stats.agendamentosPendentes > 0
+              },
+              { 
+                title: "Gerenciar Espaços", 
+                subtitle: `${stats.espacosAtivos} ativos`,
+                href: "/espacos"
+              },
+              { 
+                title: "Gerenciar Usuários", 
+                subtitle: `${stats.totalUsuarios} cadastrados`,
+                href: "/usuarios"
+              },
+              { 
+                title: "Ver Agendamentos", 
+                subtitle: `${stats.totalAgendamentos} registros`,
+                href: "/todos-agendamentos"
+              }
+            ].map((action, index) => (
+              <Button 
+                key={index}
+                asChild 
+                variant="outline" 
+                className={`h-auto p-5 justify-between elegant-button ${
+                  action.urgent ? 'border-status-warning-border bg-status-warning-bg/20 hover:bg-status-warning-bg/30' : ''
+                }`}
+              >
+                <Link to={action.href}>
+                  <div className="text-left space-y-1">
+                    <div className="font-semibold">{action.title}</div>
+                    <div className="body-text text-muted-foreground">{action.subtitle}</div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 icon-muted group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Alerta Contextual */}
+      {stats.agendamentosPendentes > 0 && (
+        <Card className="enhanced-card border-status-warning-border bg-status-warning-bg/10">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-status-warning/20 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-status-warning" />
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold text-status-warning-text text-balance">
+                  {stats.agendamentosPendentes} agendamentos aguardando aprovação
+                </div>
+                <div className="caption-text mt-1">
+                  Ação necessária para manter o sistema atualizado
+                </div>
+              </div>
+              <Button asChild size="sm" className="elegant-button">
+                <Link to="/aprovar-agendamentos">
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Revisar Agora
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Conteúdo Relevante com Menos Ícones */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Agendamentos Recentes */}
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center gap-2 mb-6">
+              <Clock className="w-5 h-5 icon-muted" />
+              <h3 className="card-title">Agendamentos Recentes</h3>
+            </div>
+            {agendamentosRecentes.length === 0 ? (
+              <div className="text-center py-12">
+                <Calendar className="w-12 h-12 icon-muted mx-auto mb-4" />
+                <div className="subtle-text">Nenhum agendamento recente</div>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {agendamentosRecentes.map(agendamento => (
+                  <div key={agendamento.id} className="group">
+                    <div className="flex items-center justify-between py-4 border-b border-border/50 last:border-0">
+                      <div className="space-y-1.5 min-w-0">
+                        <div className="font-semibold body-text truncate" title={getEspacoNome(agendamento.espacoId)}>
+                          {getEspacoNome(agendamento.espacoId)}
+                        </div>
+                        <div className="caption-text">
+                          {formatDate(agendamento.data)} • {agendamento.aulaInicio}ª à {agendamento.aulaFim}ª aula por {getUsuarioNome(agendamento.usuarioId)}
+                        </div>
+                      </div>
+                      <div className="ml-4 flex-shrink-0">
+                        {getStatusBadge(agendamento.status)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Espaços Mais Utilizados */}
-        <Card className="bg-card text-card-foreground">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-foreground">
-              Espaços Mais Utilizados
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {espacosUtilizacao.length > 0 ? (
-                espacosUtilizacao.map((espaco, index) => (
-                  <div key={espaco.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-semibold text-sm">
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp className="w-5 h-5 icon-muted" />
+              <h3 className="card-title">Espaços Mais Utilizados</h3>
+            </div>
+            {espacosMaisUtilizados.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 className="w-12 h-12 icon-muted mx-auto mb-4" />
+                <div className="subtle-text">Nenhum dado disponível</div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {espacosMaisUtilizados.map((espaco, index) => (
+                  <div key={espaco.id} className="group">
+                    <div className="flex items-center gap-4 py-3 border-b border-border/50 last:border-0">
+                      <div className="flex items-center justify-center w-9 h-9 bg-primary/10 rounded-full text-primary font-bold text-sm">
                         {index + 1}
                       </div>
-                      <div>
-                        <p className="font-medium text-sm text-foreground">{espaco.nome}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Capacidade: {espaco.capacidade} pessoas
-                        </p>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="font-semibold body-text">{espaco.nome}</div>
+                        <div className="caption-text">
+                          {espaco.capacidade} pessoas
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="secondary" className="mb-1">
-                        {espaco.utilizacao} usos
-                      </Badge>
-                      <div className="w-16 bg-muted rounded-full h-2">
-                        <div 
-                          className="h-2 bg-primary rounded-full transition-all"
-                          style={{ 
-                            width: `${Math.min(100, (espaco.utilizacao / Math.max(...espacosUtilizacao.map(e => e.utilizacao))) * 100)}%` 
-                          }}
-                        />
+                      <div className="text-right">
+                        <div className="font-bold text-lg tabular-nums">{espaco.count}</div>
+                        <div className="caption-text">usos</div>
                       </div>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">Nenhum espaço encontrado</p>
-                </div>
-              )}
-            </div>
-            
-            {espacosUtilizacao.length > 0 && (
-              <div className="pt-4 border-t mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/espacos')}
-                  className="w-full"
-                >
-                  Gerenciar Espaços
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
+                ))}
               </div>
             )}
           </CardContent>
@@ -328,4 +352,6 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-}
+};
+
+export default AdminDashboard;

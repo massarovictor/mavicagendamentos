@@ -1,19 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveTable } from '@/components/ui/responsive-table';
-import { PageHeader } from '@/components/ui/page-header';
 import { LoadingSpinner } from '@/components/ui/loading-state';
-import { ErrorState } from '@/components/ui/error-state';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useForm } from '@/hooks/useForm';
 import { Espaco } from '@/types';
-import { Plus, Settings, User, MapPin, Users, Building2, Edit, Eye, EyeOff, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Settings, Users, Edit, Eye, EyeOff, Trash2, AlertTriangle, MapPin, CheckCircle } from 'lucide-react';
 
 interface EspacoFormData {
   nome: string;
@@ -44,8 +42,6 @@ const GerenciarEspacos = () => {
   const [editingEspaco, setEditingEspaco] = useState<Espaco | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [espacoToDelete, setEspacoToDelete] = useState<Espaco | null>(null);
-
-  // Estado auxiliar para edição de equipamentos como string
   const [equipamentosInput, setEquipamentosInput] = useState('');
 
   // Form para criar/editar espaço
@@ -56,9 +52,6 @@ const GerenciarEspacos = () => {
       descricao: '',
       equipamentos: []
     },
-    persistenceKey: editingEspaco 
-      ? `form-espaco-${editingEspaco.id}` 
-      : 'form-novo-espaco',
     onSubmit: async (values) => {
       // Validações de formulário
       const formErrors = validateForm(values);
@@ -71,34 +64,31 @@ const GerenciarEspacos = () => {
       const equipamentosArr = equipamentosInput
         .split(',')
         .map(eq => eq.trim())
-        .filter(eq => eq);
+        .filter(Boolean);
 
       if (editingEspaco) {
         // Editar espaço existente
-        const updatedEspaco: Espaco = {
+        await actions.updateEspaco({
           ...editingEspaco,
           nome: values.nome,
           capacidade: Number(values.capacidade),
           descricao: values.descricao,
           equipamentos: equipamentosArr
-        };
-        await actions.updateEspaco(updatedEspaco);
+        });
         notifications.espaco.updated();
       } else {
         // Criar novo espaço
-        const newEspaco: Espaco = {
+        await actions.addEspaco({
           id: 0, // ID temporário - será substituído pelo Supabase
           nome: values.nome,
           capacidade: Number(values.capacidade),
           descricao: values.descricao,
           equipamentos: equipamentosArr,
           ativo: true
-        };
-        await actions.addEspaco(newEspaco);
+        });
         notifications.espaco.created();
       }
 
-      form.clearPersistence(); // Limpa o localStorage após o sucesso
       setIsDialogOpen(false);
       resetForm();
     }
@@ -122,21 +112,12 @@ const GerenciarEspacos = () => {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (espacoId: number) => {
+  const handleToggleStatus = async (espacoId: number, futuroStatus: boolean) => {
     try {
-      await actions.toggleEspacoStatus(espacoId, false);
-      notifications.espaco.deactivated();
-    } catch (error) {
-      notifications.error("Erro", "Falha ao desativar espaço");
-    }
-  };
-
-  const handleReactivate = async (espacoId: number) => {
-    try {
-      await actions.toggleEspacoStatus(espacoId, true);
-      notifications.espaco.activated();
-    } catch (error) {
-      notifications.error("Erro", "Falha ao reativar espaço");
+      await actions.toggleEspacoStatus(espacoId, futuroStatus);
+      notifications.espaco[futuroStatus ? 'activated' : 'deactivated']();
+    } catch (err) {
+      notifications.error("Erro", `Falha ao ${futuroStatus ? 'reativar' : 'desativar'} espaço.`);
     }
   };
 
@@ -176,362 +157,122 @@ const GerenciarEspacos = () => {
       // Proceder com a exclusão
       await actions.deleteEspaco(espacoToDelete.id);
       notifications.espaco.deleted();
-      setDeleteDialogOpen(false);
-      setEspacoToDelete(null);
     } catch (error) {
       notifications.error("Erro", "Falha ao excluir espaço");
+    } finally {
+      setDeleteDialogOpen(false);
+      setEspacoToDelete(null);
     }
   };
 
-  // Estatísticas para o PageHeader
-  const pageStats = useMemo(() => [
-    {
-      label: "Total de Espaços",
-      value: espacos.length,
-    },
-    {
-      label: "Espaços Ativos", 
-      value: espacos.filter(e => e.ativo).length,
-      icon: Eye,
-      color: "bg-green-500"
-    },
-    {
-      label: "Espaços Inativos",
-      value: espacos.filter(e => !e.ativo).length,
-      icon: EyeOff,
-      color: "bg-gray-500"
-    },
-    {
-      label: "Capacidade Total",
-      value: espacos.reduce((acc, e) => acc + e.capacidade, 0),
-      icon: Users,
-      color: "bg-purple-500"
+  const stats = useMemo(() => ({
+    total: espacos.length,
+    ativos: espacos.filter(e => e.ativo).length,
+    inativos: espacos.filter(e => !e.ativo).length,
+    capacidadeTotal: espacos.reduce((acc, e) => acc + e.capacidade, 0)
+  }), [espacos]);
+
+  const getStatusBadge = (ativo: boolean) => {
+    const baseClass = "text-xs font-semibold px-2.5 py-1 rounded-full border flex items-center gap-1.5";
+    if (ativo) {
+      return <span className={`${baseClass} status-success`}><CheckCircle className="w-3.5 h-3.5" />Ativo</span>;
     }
-  ], [espacos]);
+    return <span className={`${baseClass} status-secondary`}><EyeOff className="w-3.5 h-3.5" />Inativo</span>;
+  };
+
+  const columns = [
+    { key: 'nome', header: 'Nome', accessor: (e: Espaco) => <span className="font-semibold body-text">{e.nome}</span> },
+    { key: 'capacidade', header: 'Capacidade', accessor: (e: Espaco) => <span className="caption-text flex items-center gap-2"><Users className="w-4 h-4 icon-muted" />{e.capacidade} pessoas</span> },
+    { key: 'equipamentos', header: 'Equipamentos', accessor: (e: Espaco) => (
+      e.equipamentos?.length ? <div className="flex flex-wrap gap-1">{e.equipamentos.slice(0, 2).map(eq => <Badge key={eq} variant="secondary">{eq}</Badge>)}{e.equipamentos.length > 2 && <Badge variant="outline">+{e.equipamentos.length - 2}</Badge>}</div> : <span className="caption-text">-</span>
+    ), hiddenOnMobile: true },
+    { key: 'status', header: 'Status', accessor: (e: Espaco) => getStatusBadge(e.ativo) },
+    { key: 'acoes', header: 'Ações', accessor: (e: Espaco) => (
+      <div className="flex gap-2">
+        <Button variant="outline" size="sm" onClick={() => handleEdit(e)}><Edit className="h-4 w-4" /></Button>
+        <Button variant="outline" size="sm" onClick={() => handleToggleStatus(e.id, !e.ativo)}>{e.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(e)}><Trash2 className="h-4 w-4" /></Button>
+      </div>
+    )}
+  ];
+  
+  const mobileCardRender = (item: Espaco) => (
+    <div className="p-4 space-y-3">
+      <div className="flex justify-between items-start">
+        <h3 className="card-title">{item.nome}</h3>
+        {getStatusBadge(item.ativo)}
+      </div>
+      <p className="caption-text flex items-center gap-2"><Users className="w-4 h-4 icon-muted" /> {item.capacidade} pessoas</p>
+      {item.equipamentos?.length > 0 && <div className="flex flex-wrap gap-1 pt-2">{item.equipamentos.map(eq => <Badge key={eq} variant="secondary">{eq}</Badge>)}</div>}
+      <div className="pt-3 flex gap-2 border-t">
+        <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1"><Edit className="h-4 w-4 mr-2"/>Editar</Button>
+        <Button variant="outline" size="sm" onClick={() => handleToggleStatus(item.id, !item.ativo)} className="flex-1">{item.ativo ? <EyeOff className="h-4 w-4 mr-2"/> : <Eye className="h-4 w-4 mr-2"/>}{item.ativo ? 'Desativar' : 'Ativar'}</Button>
+        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(item)} className="flex-1"><Trash2 className="h-4 w-4 mr-2"/>Excluir</Button>
+      </div>
+    </div>
+  );
 
   if (loading) {
     return <LoadingSpinner message="Carregando espaços..." />;
   }
 
   if (error) {
-    return <ErrorState title="Erro ao carregar dados" message={error} showRetry onRetry={() => window.location.reload()} />;
+    return <div>Erro ao carregar dados.</div>;
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <PageHeader 
-        title="Gerenciar Espaços"
-        subtitle="Crie, edite e gerencie os espaços do sistema"
-        icon={MapPin}
-        stats={pageStats}
-        actions={
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={resetForm} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Novo Espaço
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingEspaco ? 'Editar Espaço' : 'Novo Espaço'}
-                </DialogTitle>
-                <DialogDescription>
-                  Preencha as informações do espaço abaixo.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={form.handleSubmit} className="space-y-4">
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="nome">Nome *</Label>
-                    <Input
-                      id="nome"
-                      value={form.values.nome}
-                      onChange={(e) => form.setValue('nome', e.target.value)}
-                      placeholder="Nome do espaço"
-                      className={form.errors.nome ? 'border-red-500' : ''}
-                    />
-                    {form.errors.nome && (
-                      <p className="text-sm text-red-600">{form.errors.nome}</p>
-                    )}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="capacidade">Capacidade *</Label>
-                    <Input
-                      id="capacidade"
-                      type="number"
-                      value={form.values.capacidade}
-                      onChange={(e) => form.setValue('capacidade', Number(e.target.value))}
-                      placeholder="Número de pessoas"
-                      className={form.errors.capacidade ? 'border-red-500' : ''}
-                    />
-                    {form.errors.capacidade && (
-                      <p className="text-sm text-red-600">{form.errors.capacidade}</p>
-                    )}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="descricao">Descrição</Label>
-                    <Input
-                      id="descricao"
-                      value={form.values.descricao}
-                      onChange={(e) => form.setValue('descricao', e.target.value)}
-                      placeholder="Descrição do espaço"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="equipamentos">Equipamentos</Label>
-                    <Input
-                      id="equipamentos"
-                      value={equipamentosInput}
-                      onChange={(e) => setEquipamentosInput(e.target.value)}
-                      placeholder="Separados por vírgula"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setIsDialogOpen(false)}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={form.isSubmitting}
-                  >
-                    {form.isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        {editingEspaco ? 'Atualizando...' : 'Criando...'}
-                      </>
-                    ) : (
-                      editingEspaco ? 'Atualizar' : 'Criar'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        }
-      />
+    <div className="max-w-7xl mx-auto space-y-10">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="section-title text-balance">Gerenciar Espaços</h1>
+          <p className="subtle-text">Crie, edite e gerencie os espaços disponíveis para agendamento.</p>
+        </div>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild><Button onClick={resetForm}><Plus className="h-4 w-4 mr-2" />Novo Espaço</Button></DialogTrigger>
+          <DialogContent><DialogHeader><DialogTitle>{editingEspaco ? 'Editar Espaço' : 'Novo Espaço'}</DialogTitle><DialogDescription>Preencha as informações do espaço abaixo.</DialogDescription></DialogHeader>
+            <form onSubmit={form.handleSubmit} className="space-y-4 pt-4">
+              <div><Label htmlFor="nome">Nome *</Label><Input id="nome" value={form.values.nome} onChange={(e) => form.setValue('nome', e.target.value)} placeholder="Ex: Laboratório de Informática" className={form.errors.nome ? 'border-red-500' : ''}/></div>
+              <div><Label htmlFor="capacidade">Capacidade *</Label><Input id="capacidade" type="number" value={form.values.capacidade} onChange={(e) => form.setValue('capacidade', Number(e.target.value))} placeholder="Ex: 25" className={form.errors.capacidade ? 'border-red-500' : ''}/></div>
+              <div><Label htmlFor="descricao">Descrição</Label><Input id="descricao" value={form.values.descricao} onChange={(e) => form.setValue('descricao', e.target.value)} placeholder="Ex: Sala com 25 computadores"/></div>
+              <div><Label htmlFor="equipamentos">Equipamentos (separados por vírgula)</Label><Input id="equipamentos" value={equipamentosInput} onChange={(e) => setEquipamentosInput(e.target.value)} placeholder="Ex: Projetor, Ar condicionado"/></div>
+              <DialogFooter><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit" disabled={form.isSubmitting}>{form.isSubmitting ? 'Salvando...' : 'Salvar'}</Button></DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Settings className="w-6 h-6 icon-accent"/></div><div className="metric-display">{stats.total}</div></div><div className="card-title">Total</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><CheckCircle className="w-6 h-6 text-status-success"/></div><div className="metric-display text-status-success">{stats.ativos}</div></div><div className="card-title">Ativos</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-muted/50 rounded-lg"><EyeOff className="w-6 h-6 text-muted-foreground"/></div><div className="metric-display text-muted-foreground">{stats.inativos}</div></div><div className="card-title">Inativos</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-info-bg rounded-lg"><Users className="w-6 h-6 text-status-info"/></div><div className="metric-display text-status-info">{stats.capacidadeTotal}</div></div><div className="card-title">Capacidade Total</div></CardContent></Card>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Espaços</CardTitle>
-          <CardDescription>Todos os espaços cadastrados no sistema</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <Card className="enhanced-card">
+        <CardContent className="refined-spacing">
+          <div className="flex items-center gap-2 mb-6"><Settings className="w-5 h-5 icon-muted" /><h2 className="card-title">Lista de Espaços</h2></div>
           <ResponsiveTable
             data={espacos}
-            columns={[
-              {
-                key: 'nome',
-                header: 'Nome',
-                accessor: (espaco) => espaco.nome,
-                mobileLabel: 'Nome'
-              },
-              {
-                key: 'capacidade',
-                header: 'Capacidade',
-                accessor: (espaco) => (
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-gray-500" />
-                    <span>{espaco.capacidade} pessoas</span>
-                        </div>
-                ),
-                mobileLabel: 'Capacidade'
-              },
-              {
-                key: 'descricao',
-                header: 'Descrição',
-                accessor: (espaco) => espaco.descricao || '-',
-                mobileLabel: 'Descrição',
-                hiddenOnMobile: true
-              },
-              {
-                key: 'equipamentos',
-                header: 'Equipamentos',
-                accessor: (espaco) => (
-                  espaco.equipamentos?.length ? (
-                          <div className="flex flex-wrap gap-1">
-                            {espaco.equipamentos.slice(0, 2).map((eq, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {eq}
-                              </Badge>
-                            ))}
-                            {espaco.equipamentos.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{espaco.equipamentos.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                  ) : '-'
-                ),
-                mobileLabel: 'Equipamentos',
-                hiddenOnMobile: true
-              },
-              {
-                key: 'status',
-                header: 'Status',
-                accessor: (espaco) => (
-                        <Badge variant={espaco.ativo ? "default" : "secondary"}>
-                          {espaco.ativo ? 'Ativo' : 'Inativo'}
-                        </Badge>
-                ),
-                mobileLabel: 'Status'
-              },
-              {
-                key: 'acoes',
-                header: 'Ações',
-                accessor: (espaco) => (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(espaco)}
-                            className="hover:bg-blue-50 hover:border-blue-200"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                    {espaco.ativo ? (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDelete(espaco.id)}
-                        className="hover:bg-yellow-50 hover:border-yellow-200"
-                      >
-                        <EyeOff className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleReactivate(espaco.id)}
-                        className="hover:bg-green-50 hover:border-green-200"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                      onClick={() => handleDeleteClick(espaco)}
-                      className="hover:bg-red-50 hover:border-red-200 text-red-600"
-                          >
-                      <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                ),
-                mobileLabel: 'Ações'
-              }
-            ]}
+            columns={columns}
+            mobileCardRender={mobileCardRender}
             emptyState={
-              <div className="text-center py-8">
-                <div className="text-gray-500">
-                  <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="font-medium">Nenhum espaço encontrado</p>
-                  <p className="text-sm">Crie um novo espaço para começar</p>
-                </div>
-          </div>
+              <div className="text-center py-12"><MapPin className="w-12 h-12 icon-muted mx-auto mb-4" /><div className="subtle-text">Nenhum espaço cadastrado</div><p className="caption-text mt-2">Crie o primeiro espaço para começar a gerenciar.</p></div>
             }
           />
         </CardContent>
       </Card>
 
-      {/* Diálogo de Confirmação de Exclusão */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" />
-              Confirmar Exclusão
-            </DialogTitle>
-            <DialogDescription>
-              Esta ação é <strong>irreversível</strong>. O espaço será permanentemente removido do sistema.
-            </DialogDescription>
-          </DialogHeader>
-          
+        <DialogContent><DialogHeader><DialogTitle className="flex items-center gap-2 text-red-600"><AlertTriangle className="h-5 w-5" />Confirmar Exclusão</DialogTitle><DialogDescription>Esta ação é <strong>irreversível</strong>. Tem certeza de que deseja excluir permanentemente este espaço?</DialogDescription></DialogHeader>
           {espacoToDelete && (
-            <div className="py-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-red-100 rounded-full">
-                    <Building2 className="h-4 w-4 text-red-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{espacoToDelete.nome}</p>
-                    <p className="text-sm text-gray-600">
-                      Capacidade: {espacoToDelete.capacidade} pessoas
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
-                    <Badge variant={espacoToDelete.ativo ? "default" : "secondary"}>
-                      {espacoToDelete.ativo ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Agendamentos:</span>
-                    <span className="font-medium">
-                      {agendamentos.filter(a => a.espacoId === espacoToDelete.id).length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Gestores responsáveis:</span>
-                    <span className="font-medium">
-                      {usuarios.filter(u => u.tipo === 'gestor' && u.espacos?.includes(espacoToDelete.id)).length}
-                    </span>
-                  </div>
-                  {espacoToDelete.equipamentos && espacoToDelete.equipamentos.length > 0 && (
-                    <div>
-                      <span className="text-gray-600">Equipamentos:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {espacoToDelete.equipamentos.slice(0, 3).map((eq, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {eq}
-                          </Badge>
-                        ))}
-                        {espacoToDelete.equipamentos.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{espacoToDelete.equipamentos.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-center gap-2 text-yellow-800">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="text-sm font-medium">Atenção</span>
-                </div>
-                <p className="text-sm text-yellow-700 mt-1">
-                  Todos os dados relacionados a este espaço serão perdidos permanentemente.
-                </p>
-              </div>
+            <div className="py-4 space-y-3">
+              <div className="p-4 bg-muted/50 border rounded-lg"><p className="body-text font-semibold">{espacoToDelete.nome}</p><p className="caption-text">Capacidade: {espacoToDelete.capacidade}</p></div>
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg"><p className="body-text text-red-700">Todos os dados relacionados a este espaço serão perdidos.</p></div>
             </div>
           )}
-
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="button" 
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <Button type="button" variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="destructive" onClick={handleConfirmDelete}>
               <Trash2 className="h-4 w-4 mr-2" />
               Excluir Permanentemente
             </Button>

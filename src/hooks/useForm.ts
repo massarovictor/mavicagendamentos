@@ -78,10 +78,10 @@ export function useForm<T extends Record<string, any>>({
     field: K, 
     value: T[K]
   ) => {
-    if (!schema) return true;
+    if (!schema || !(schema instanceof z.ZodObject)) return true;
 
     try {
-      const fieldSchema = schema.shape[field as string];
+      const fieldSchema = (schema as z.ZodObject<any>).shape[field as string];
       if (fieldSchema) {
         fieldSchema.parse(value);
         setFormState(prev => ({

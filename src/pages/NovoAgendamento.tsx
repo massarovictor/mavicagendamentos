@@ -16,7 +16,7 @@ import { useForm } from '@/hooks/useForm';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, Clock, Building2, User, AlertTriangle, CheckCircle, Info, Plus } from 'lucide-react';
+import { Calendar, Clock, Building2, User, AlertTriangle, CheckCircle, Info, Plus, ListChecks } from 'lucide-react';
 import { AULAS_HORARIOS, NumeroAula, Agendamento } from '@/types';
 import { formatAulas } from '@/utils/format';
 import { BusinessValidations, DataIntegrityValidations, SecurityValidations, agendamentoSchema } from '@/utils/validations';
@@ -289,50 +289,110 @@ const NovoAgendamento = () => {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
-      <PageHeader 
-        title="Novo Agendamento"
-        subtitle="Solicite um novo agendamento de espaço"
-        icon={Plus}
-        stats={pageStats}
-      />
+    <div className="max-w-7xl mx-auto space-y-6">
+       <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="section-title">Novo Agendamento</h1>
+          <p className="subtle-text">Solicite um novo agendamento de espaço.</p>
+        </div>
+        <Button asChild className="elegant-button">
+            <a href="/meus-agendamentos">
+                Meus Agendamentos
+            </a>
+        </Button>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        {/* Formulário Principal */}
-        <div>
-          <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-                <Calendar className="h-4 w-4" />
-              Novo Agendamento
-            </CardTitle>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Building2 className="w-6 h-6 icon-accent" />
+              </div>
+              <div className="metric-display">{espacosAtivos.length}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Espaços Ativos</div>
+              <div className="caption-text">Disponíveis para agendar</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-chart-3/10 rounded-lg">
+                <Calendar className="w-6 h-6 text-chart-3" />
+              </div>
+              <div className="metric-display">{pageStats[1].value}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Agendamentos Hoje</div>
+              <div className="caption-text">Feitos por você</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-chart-2/10 rounded-lg">
+                <ListChecks className="w-6 h-6 text-chart-2" />
+              </div>
+              <div className="metric-display">{pageStats[2].value}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Meus Agendamentos</div>
+              <div className="caption-text">Total de solicitações</div>
+            </div>
+          </CardContent>
+        </Card>
+         <Card className="enhanced-card border-status-info-border/50">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-status-info/10 rounded-lg">
+                <Clock className="w-6 h-6 text-status-info" />
+              </div>
+              <div className="metric-display text-status-info">{AULAS_HORARIOS[form.values.aulaInicio as NumeroAula]?.inicio || '--:--'}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Horário de Início</div>
+              <div className="caption-text">Aula selecionada</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          <Card className="enhanced-card">
+          <CardHeader>
+            <CardTitle>Detalhes da Solicitação</CardTitle>
+            <CardDescription>Preencha os campos abaixo para solicitar o agendamento.</CardDescription>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent>
               <form onSubmit={form.handleSubmit} className="space-y-4">
               {/* Seleção de Espaço */}
-                <div className="space-y-1">
-                  <Label htmlFor="espacoId" className="text-sm font-medium">
-                    Espaço *
+                <div>
+                  <Label htmlFor="espacoId">
+                    Espaço
                   </Label>
                 <Select
-                    value={form.values.espacoId.toString()} 
-                  onValueChange={(value) => form.setValue('espacoId', parseInt(value))}
+                    name="espacoId"
+                    value={form.values.espacoId > 0 ? form.values.espacoId.toString() : ""}
+                    onValueChange={(value) => form.setValue('espacoId', parseInt(value))}
                 >
-                    <SelectTrigger className="h-10 bg-background border border-border">
-                    <SelectValue placeholder="Selecione o espaço">
-                      {form.values.espacoId ? 
-                        espacosAtivos.find(e => e.id === form.values.espacoId)?.nome || "Selecione o espaço"
-                        : "Selecione o espaço"
-                      }
-                    </SelectValue>
+                    <SelectTrigger>
+                    <SelectValue placeholder="Selecione o espaço desejado" />
                   </SelectTrigger>
                   <SelectContent>
                       {espacosAtivos.map(espaco => (
                       <SelectItem key={espaco.id} value={espaco.id.toString()}>
-                          <div className="w-full">
-                            <div className="font-medium text-left text-foreground">{espaco.nome}</div>
-                            <div className="text-xs text-foreground text-left">
-                              {espaco.capacidade} pessoas
+                          <div className="flex items-center gap-3">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                                <div className="font-semibold">{espaco.nome}</div>
+                                <div className="text-xs text-muted-foreground">
+                                Capacidade: {espaco.capacidade} pessoas
+                                </div>
                             </div>
                           </div>
                       </SelectItem>
@@ -341,31 +401,26 @@ const NovoAgendamento = () => {
                 </Select>
               </div>
 
-                                {/* Data e Horário em Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Data */}
-                  <div className="space-y-1">
-                    <Label className="text-sm font-medium">
-                      Data *
+                  <div>
+                    <Label>
+                      Data
                     </Label>
                     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant="outline"
-                          className={`h-10 w-full justify-start text-left font-normal bg-background border border-border ${
+                          className={`w-full justify-start text-left font-normal ${
                             !form.values.data && "text-muted-foreground"
                           }`}
                         >
                           <Calendar className="mr-2 h-4 w-4" />
-                          <span className="truncate text-sm">
+                          <span className="truncate">
                             {form.values.data ? (
-                              new Date(form.values.data + 'T12:00:00').toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                              })
+                              new Date(form.values.data + 'T12:00:00').toLocaleDateString('pt-BR')
                             ) : (
-                              "Selecionar"
+                              "Selecione uma data"
                             )}
                           </span>
                         </Button>
@@ -390,15 +445,16 @@ const NovoAgendamento = () => {
               </div>
 
                   {/* Aula Início */}
-                  <div className="space-y-1">
-                    <Label htmlFor="aulaInicio" className="text-sm font-medium">
-                      Início *
+                  <div>
+                    <Label htmlFor="aulaInicio">
+                      Aula de Início
                     </Label>
                   <Select 
+                    name="aulaInicio"
                     value={form.values.aulaInicio.toString()} 
                     onValueChange={(value) => form.setValue('aulaInicio', parseInt(value) as NumeroAula)}
                   >
-                      <SelectTrigger className="h-10 bg-background border border-border">
+                      <SelectTrigger>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -412,15 +468,16 @@ const NovoAgendamento = () => {
                 </div>
 
                   {/* Aula Fim */}
-                  <div className="space-y-1">
-                    <Label htmlFor="aulaFim" className="text-sm font-medium">
-                      Fim *
+                  <div>
+                    <Label htmlFor="aulaFim">
+                      Aula de Fim
                     </Label>
                   <Select 
+                    name="aulaFim"
                     value={form.values.aulaFim.toString()} 
                     onValueChange={(value) => form.setValue('aulaFim', parseInt(value) as NumeroAula)}
                   >
-                      <SelectTrigger className="h-10 bg-background border border-border">
+                      <SelectTrigger>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -435,78 +492,87 @@ const NovoAgendamento = () => {
               </div>
 
               {/* Observações */}
-                <div className="space-y-1">
-                <Label htmlFor="observacoes" className="text-sm font-medium">Observações</Label>
+                <div>
+                <Label htmlFor="observacoes">Observações (Opcional)</Label>
                 <Textarea
                   id="observacoes"
-                    placeholder="Objetivo do agendamento..."
+                    placeholder="Ex: Reunião do projeto X, apresentação para o cliente Y..."
                   value={form.values.observacoes}
                   onChange={(e) => form.setValue('observacoes', e.target.value)}
                     maxLength={500}
-                    className="min-h-[60px] resize-none text-sm"
+                    className="min-h-[80px]"
                 />
-                  <div className="text-xs text-muted-foreground">
-                    {form.values.observacoes.length}/500
-                  </div>
+                  <p className="text-xs text-muted-foreground text-right mt-1">
+                    {form.values.observacoes.length} / 500
+                  </p>
               </div>
 
               <Button 
                 type="submit" 
-                  className="w-full h-10" 
-                  disabled={!isHorarioDisponivel}
+                  className="w-full elegant-button" 
+                  disabled={!isHorarioDisponivel || !form.values.espacoId}
               >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Solicitar
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Solicitar Agendamento
               </Button>
             </form>
           </CardContent>
         </Card>
         </div>
 
-        {/* Sidebar com Informações */}
-        <div className="space-y-3">
-
-          {/* Grade de Horários */}
-          {form.values.espacoId && form.values.data && (
+        <div className="space-y-4">
+          {form.values.espacoId && form.values.data ? (
             <HorarioGrid
               espacoId={form.values.espacoId}
               data={form.values.data}
               agendamentos={agendamentos}
               agendamentosFixos={agendamentosFixos}
             />
+          ) : (
+             <Card className="enhanced-card">
+                <CardContent className="p-6 text-center">
+                  <Info className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                  <p className="font-medium">Selecione um Espaço e uma Data</p>
+                  <p className="subtle-text">A grade de horários disponíveis será exibida aqui.</p>
+                </CardContent>
+             </Card>
           )}
 
-          {/* Conflitos Detectados */}
           {conflicts.hasConflicts && (
-            <Card>
+            <Card className="enhanced-card border-status-error-border">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base text-red-600">
-                  <AlertTriangle className="h-4 w-4" />
-                  Conflitos
+                <CardTitle className="flex items-center gap-2 text-status-error">
+                  <AlertTriangle className="h-5 w-5" />
+                  Conflito de Horário
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 pt-0">
                 {conflicts.agendamentosFixosConflitantes.map(af => (
-                  <div key={af.id} className="p-2 bg-red-50 rounded border border-red-200">
-                    <div className="text-sm font-medium text-red-800">
-                      Fixo
+                  <div key={`fixo-${af.id}`} className="p-2.5 bg-status-error-subtle rounded-md">
+                    <div className="text-sm font-semibold text-status-error-foreground">
+                      Conflito com Horário Fixo
                     </div>
-                    <div className="text-xs text-red-600">
-                      {formatAulas(af.aulaInicio as NumeroAula, af.aulaFim as NumeroAula)}
+                    <div className="text-xs text-status-error-foreground/80">
+                      {formatAulas(af.aulaInicio as NumeroAula, af.aulaFim as NumeroAula)} está reservado.
                     </div>
                 </div>
                 ))}
                 
                 {conflicts.agendamentosConflitantes.map(a => {
                   const usuarioConflito = usuarios.find(u => u.id === a.usuarioId);
+                  const isPendente = a.status === 'pendente';
+                  const cardClass = isPendente ? 'bg-status-warning-subtle' : 'bg-status-error-subtle';
+                  const textClass = isPendente ? 'text-status-warning-foreground' : 'text-status-error-foreground';
+                  const title = isPendente ? 'Horário com status pendente' : 'Horário já aprovado';
+
                   return (
-                    <div key={a.id} className="p-2 bg-amber-50 rounded border border-amber-200">
-                      <div className="text-sm font-medium text-amber-800">
-                        {a.status === 'aprovado' ? 'Aprovado' : 'Pendente'}
-                  </div>
-                      <div className="text-xs text-amber-600">
-                        {usuarioConflito?.nome} - {formatAulas(a.aulaInicio as NumeroAula, a.aulaFim as NumeroAula)}
-                </div>
+                    <div key={`ag-${a.id}`} className={`p-2.5 ${cardClass} rounded-md`}>
+                      <div className={`text-sm font-semibold ${textClass}`}>
+                        {title}
+                      </div>
+                      <div className={`text-xs ${textClass}/80`}>
+                        Solicitado por {usuarioConflito?.nome || 'desconhecido'} às {formatAulas(a.aulaInicio as NumeroAula, a.aulaFim as NumeroAula)}.
+                      </div>
                     </div>
                   );
                 })}
@@ -514,43 +580,30 @@ const NovoAgendamento = () => {
             </Card>
           )}
 
-          {/* Informações do Espaço Selecionado */}
-          {form.values.espacoId && (
+          {form.values.espacoId > 0 && (
             (() => {
               const espacoSelecionado = espacos.find(e => e.id === form.values.espacoId);
               return espacoSelecionado ? (
-                <Card>
-              <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Info className="h-4 w-4" />
-                      Espaço
-                </CardTitle>
-              </CardHeader>
-                  <CardContent className="space-y-2 pt-0">
-                    <div>
-                      <div className="text-sm font-medium">{espacoSelecionado.nome}</div>
-                      {espacoSelecionado.descricao && (
-                        <div className="text-xs text-muted-foreground">{espacoSelecionado.descricao}</div>
-                      )}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">Capacidade:</span>
-                      <Badge variant="outline" className="text-xs">{espacoSelecionado.capacidade} pessoas</Badge>
+                <Card className="enhanced-card">
+                  <CardHeader>
+                        <CardTitle>
+                          Informações do Espaço
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex justify-between items-center subtle-text">
+                      <span>Capacidade</span>
+                      <span className="font-semibold text-foreground">{espacoSelecionado.capacidade} pessoas</span>
                   </div>
                     {espacoSelecionado.equipamentos && espacoSelecionado.equipamentos.length > 0 && (
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Equipamentos:</div>
-                        <div className="flex flex-wrap gap-1">
-                          {espacoSelecionado.equipamentos.slice(0, 3).map((eq, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
+                      <div className="space-y-2">
+                        <span className="subtle-text">Equipamentos</span>
+                        <div className="flex flex-wrap gap-2">
+                          {espacoSelecionado.equipamentos.map((eq, index) => (
+                            <Badge key={index} variant="secondary" className="font-normal">
                               {eq}
                             </Badge>
                           ))}
-                          {espacoSelecionado.equipamentos.length > 3 && (
-                            <Badge variant="outline" className="text-xs px-1 py-0">
-                              +{espacoSelecionado.equipamentos.length - 3}
-                            </Badge>
-                          )}
                         </div>
                   </div>
                 )}

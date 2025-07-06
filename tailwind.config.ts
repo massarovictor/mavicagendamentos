@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -93,6 +92,31 @@ export default {
 					DEFAULT: '#8B5CF6',
 					light: '#EDE9FE',
 					dark: '#5B21B6'
+				},
+				// Cores semânticas para status
+				'status-success': {
+					DEFAULT: 'hsl(var(--status-success))',
+					bg: 'hsl(var(--status-success-bg))',
+					border: 'hsl(var(--status-success-border))',
+					text: 'hsl(var(--status-success-text))'
+				},
+				'status-warning': {
+					DEFAULT: 'hsl(var(--status-warning))',
+					bg: 'hsl(var(--status-warning-bg))',
+					border: 'hsl(var(--status-warning-border))',
+					text: 'hsl(var(--status-warning-text))'
+				},
+				'status-error': {
+					DEFAULT: 'hsl(var(--status-error))',
+					bg: 'hsl(var(--status-error-bg))',
+					border: 'hsl(var(--status-error-border))',
+					text: 'hsl(var(--status-error-text))'
+				},
+				'status-info': {
+					DEFAULT: 'hsl(var(--status-info))',
+					bg: 'hsl(var(--status-info-bg))',
+					border: 'hsl(var(--status-info-border))',
+					text: 'hsl(var(--status-info-text))'
 				}
 			},
 			borderRadius: {

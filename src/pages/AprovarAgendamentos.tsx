@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ResponsiveTable } from '@/components/ui/responsive-table';
 import { LoadingSpinner } from '@/components/ui/loading-state';
-import { ErrorState } from '@/components/ui/error-state';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, Check, X, Clock, User, CheckCircle, AlertTriangle, Users } from 'lucide-react';
-import { formatAulas } from '@/utils/format';
-import { NumeroAula } from '@/types';
-import { PageHeader } from '@/components/ui/page-header';
+import { formatAulas, formatDate } from '@/utils/format';
+import { Agendamento, NumeroAula } from '@/types';
 import { BusinessValidations } from '@/utils/validations';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -31,7 +29,6 @@ const AprovarAgendamentos = () => {
     ? agendamentos
     : agendamentos.filter(a => meusEspacos.some(e => e.id === a.espacoId));
 
-  // Detectar conflitos entre agendamentos pendentes
   const detectConflicts = () => {
     const conflicts: { [key: string]: number[] } = {};
     
@@ -45,7 +42,6 @@ const AprovarAgendamentos = () => {
           agendamento.id
         );
 
-        // Apenas conflitos com outros pendentes (aprovados já bloqueiam novos)
         const pendentesConflitantes = conflictData.agendamentosConflitantes
           .filter(a => a.status === 'pendente');
 
@@ -70,7 +66,6 @@ const AprovarAgendamentos = () => {
     const agendamento = agendamentos.find(a => a.id === agendamentoId);
     if (!agendamento) return;
 
-    // Se aprovando, verificar conflitos primeiro
     if (novoStatus === 'aprovado') {
       const conflicts = BusinessValidations.getAgendamentoConflicts(
         agendamento,
@@ -79,40 +74,21 @@ const AprovarAgendamentos = () => {
         agendamento.id
       );
 
-      // Verificar se há agendamentos fixos conflitantes
       if (conflicts.agendamentosFixosConflitantes.length > 0) {
-        notifications.error(
-          'Não é possível aprovar',
-          'Este horário está bloqueado por um agendamento fixo.'
-        );
+        notifications.error('Não é possível aprovar', 'Este horário está bloqueado por um agendamento fixo.');
         return;
       }
 
-      // Verificar se há outros aprovados conflitantes
-      const aprovadosConflitantes = conflicts.agendamentosConflitantes
-        .filter(a => a.status === 'aprovado');
-      
+      const aprovadosConflitantes = conflicts.agendamentosConflitantes.filter(a => a.status === 'aprovado');
       if (aprovadosConflitantes.length > 0) {
-        notifications.error(
-          'Não é possível aprovar',
-          'Este horário já está aprovado para outro usuário.'
-        );
+        notifications.error('Não é possível aprovar', 'Este horário já está aprovado para outro usuário.');
         return;
       }
 
-      // Se há pendentes conflitantes, rejeitar automaticamente
-      const pendentesConflitantes = conflicts.agendamentosConflitantes
-        .filter(a => a.status === 'pendente');
-      
+      const pendentesConflitantes = conflicts.agendamentosConflitantes.filter(a => a.status === 'pendente');
       if (pendentesConflitantes.length > 0) {
-        // Rejeitar os conflitantes
-        pendentesConflitantes.forEach(a => {
-          actions.updateAgendamentoStatus(a.id, 'rejeitado');
-        });
-        notifications.info(
-          'Conflitos resolvidos',
-          `${pendentesConflitantes.length} agendamento(s) conflitante(s) foram automaticamente rejeitados.`
-        );
+        pendentesConflitantes.forEach(a => actions.updateAgendamentoStatus(a.id, 'rejeitado'));
+        notifications.info('Conflitos resolvidos', `${pendentesConflitantes.length} agendamento(s) conflitante(s) foram automaticamente rejeitados.`);
       }
     }
 
@@ -126,25 +102,15 @@ const AprovarAgendamentos = () => {
   };
 
   const resolveConflict = (approvedId: number, rejectedIds: number[]) => {
-    // Aprovar o selecionado
     actions.updateAgendamentoStatus(approvedId, 'aprovado');
-    
-    // Rejeitar os outros
-    rejectedIds.forEach(id => {
-      actions.updateAgendamentoStatus(id, 'rejeitado');
-    });
-
-    notifications.success(
-      'Conflito resolvido',
-      `1 agendamento aprovado e ${rejectedIds.length} rejeitado(s).`
-    );
-
+    rejectedIds.forEach(id => actions.updateAgendamentoStatus(id, 'rejeitado'));
+    notifications.success('Conflito resolvido', `1 agendamento aprovado e ${rejectedIds.length} rejeitado(s).`);
     setConflictDialogOpen(false);
     setSelectedConflict(null);
   };
 
   const getConflictForAgendamento = (agendamentoId: number) => {
-    for (const [key, ids] of Object.entries(conflictGroups)) {
+    for (const ids of Object.values(conflictGroups)) {
       if (ids.includes(agendamentoId)) {
         return ids.filter(id => id !== agendamentoId);
       }
@@ -152,37 +118,18 @@ const AprovarAgendamentos = () => {
     return [];
   };
 
-  const hasConflict = (agendamentoId: number) => {
-    return getConflictForAgendamento(agendamentoId).length > 0;
-  };
+  const hasConflict = (agendamentoId: number) => getConflictForAgendamento(agendamentoId).length > 0;
 
-  if (loading) {
-    return <LoadingSpinner message="Carregando agendamentos..." />;
-  }
+  const getEspacoNome = (espacoId: number) => espacos.find(e => e.id === espacoId)?.nome || 'N/A';
+  const getUsuarioNome = (usuarioId: number) => usuarios.find(u => u.id === usuarioId)?.nome || 'N/A';
 
-  const getEspacoNome = (espacoId: number) => {
-    return espacos.find(e => e.id === espacoId)?.nome || 'Espaço não encontrado';
-  };
-
-  const getUsuarioNome = (usuarioId: number) => {
-    return usuarios.find(u => u.id === usuarioId)?.nome || 'Usuário não encontrado';
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
+    const baseClass = "text-xs font-semibold px-2.5 py-1 rounded-full border flex items-center gap-1.5";
     switch (status) {
-      case 'aprovado': return 'bg-green-100 text-green-800';
-      case 'rejeitado': return 'bg-red-100 text-red-800';
-      case 'pendente': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'aprovado': return 'Aprovado';
-      case 'rejeitado': return 'Rejeitado';
-      case 'pendente': return 'Pendente';
-      default: return status;
+      case 'aprovado': return <span className={`${baseClass} status-success`}><CheckCircle className="w-3.5 h-3.5" />Aprovado</span>;
+      case 'rejeitado': return <span className={`${baseClass} status-error`}><X className="w-3.5 h-3.5" />Rejeitado</span>;
+      case 'pendente': return <span className={`${baseClass} status-warning`}><Clock className="w-3.5 h-3.5" />Pendente</span>;
+      default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
@@ -197,40 +144,83 @@ const AprovarAgendamentos = () => {
     rejeitados: agendamentosMeusEspacos.filter(a => a.status === 'rejeitado').length,
     conflitos: Object.keys(conflictGroups).length
   };
-
-  const pageStats = [
-    {
-      label: 'Total',
-      value: counts.total,
-      icon: Calendar,
-      color: 'bg-blue-500'
-    },
-    {
-      label: 'Pendentes',
-      value: counts.pendentes,
-      icon: Clock,
-      color: 'bg-yellow-500'
-    },
-    {
-      label: 'Conflitos',
-      value: counts.conflitos,
-      icon: AlertTriangle,
-      color: 'bg-red-500'
-    },
-    {
-      label: 'Aprovados',
-      value: counts.aprovados,
-      icon: Check,
-      color: 'bg-green-500'
-    }
+  
+  const columns = [
+    { key: 'espaco', header: 'Espaço', accessor: (a: Agendamento) => <span className="font-semibold body-text">{getEspacoNome(a.espacoId)}</span> },
+    { key: 'usuario', header: 'Usuário', accessor: (a: Agendamento) => <span className="caption-text">{getUsuarioNome(a.usuarioId)}</span>, hiddenOnMobile: true },
+    { key: 'data', header: 'Data', accessor: (a: Agendamento) => <span className="caption-text">{formatDate(a.data)}</span> },
+    { key: 'horario', header: 'Horário', accessor: (a: Agendamento) => <span className="body-text">{formatAulas(a.aulaInicio as NumeroAula, a.aulaFim as NumeroAula)}</span>, hiddenOnMobile: true },
+    { key: 'status', header: 'Status', accessor: (a: Agendamento) => (
+      <div className="flex items-center gap-2">
+        {getStatusBadge(a.status)}
+        {hasConflict(a.id) && <Badge variant="destructive" className="bg-status-warning text-status-warning-foreground hover:bg-status-warning/90">Conflito</Badge>}
+      </div>
+    )},
+    { key: 'acoes', header: 'Ações', accessor: (a: Agendamento) => (
+      <>
+        {a.status === 'pendente' && (
+          <div className="flex gap-2">
+            {hasConflict(a.id) ? (
+              <Button variant="outline" size="sm" onClick={() => handleConflictResolution(a.id)} className="border-status-warning text-status-warning hover:bg-status-warning-bg hover:text-status-warning-text">
+                <Users className="h-4 w-4 mr-1" />Resolver
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" onClick={() => handleStatusChange(a.id, 'aprovado')} className="border-status-success text-status-success hover:bg-status-success-bg hover:text-status-success-text">
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleStatusChange(a.id, 'rejeitado')} className="border-status-error text-status-error hover:bg-status-error-bg hover:text-status-error-text">
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+        {a.status !== 'pendente' && <span className="caption-text italic">{a.status === 'aprovado' ? 'Finalizado' : 'Finalizado'}</span>}
+      </>
+    )}
   ];
+
+  const mobileCardRender = (item: Agendamento) => (
+    <div className="p-4 space-y-3">
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <h3 className="card-title">{getEspacoNome(item.espacoId)}</h3>
+          <p className="body-text">{formatAulas(item.aulaInicio as NumeroAula, item.aulaFim as NumeroAula)}</p>
+          <p className="caption-text">{formatDate(item.data)} por {getUsuarioNome(item.usuarioId)}</p>
+        </div>
+        {getStatusBadge(item.status)}
+      </div>
+      {item.observacoes && <p className="body-text bg-muted p-2 rounded-md"><strong>Obs:</strong> {item.observacoes}</p>}
+      <div className="pt-2 flex gap-2">
+        {item.status === 'pendente' && (
+          hasConflict(item.id) ? (
+            <Button variant="outline" size="sm" onClick={() => handleConflictResolution(item.id)} className="flex-1 border-status-warning text-status-warning hover:bg-status-warning-bg hover:text-status-warning-text">
+              <Users className="h-4 w-4 mr-2" />Resolver Conflito
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={() => handleStatusChange(item.id, 'aprovado')} className="flex-1 border-status-success text-status-success hover:bg-status-success-bg hover:text-status-success-text">
+                <Check className="h-4 w-4 mr-2" />Aprovar
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleStatusChange(item.id, 'rejeitado')} className="flex-1 border-status-error text-status-error hover:bg-status-error-bg hover:text-status-error-text">
+                <X className="h-4 w-4 mr-2" />Rejeitar
+              </Button>
+            </>
+          )
+        )}
+      </div>
+    </div>
+  );
+
+  if (loading) return <LoadingSpinner message="Carregando agendamentos..." />;
 
   const selectedConflictAgendamento = selectedConflict 
     ? agendamentos.find(a => a.id === selectedConflict)
     : null;
 
   const conflictingAgendamentos = selectedConflictAgendamento 
-    ? getConflictForAgendamento(selectedConflict).map(id => 
+    ? getConflictForAgendamento(selectedConflict!).map(id => 
         agendamentos.find(a => a.id === id)!
       ).filter(Boolean)
     : [];
@@ -240,290 +230,91 @@ const AprovarAgendamentos = () => {
     : [];
 
   return (
-    <div className="space-y-6 p-6">
-      {/* PageHeader */}
-      <PageHeader 
-        title="Aprovar Agendamentos"
-        subtitle="Gerencie os agendamentos dos seus espaços"
-        icon={CheckCircle}
-        stats={pageStats}
-      />
+    <div className="max-w-7xl mx-auto space-y-10">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="section-title text-balance">Aprovar Agendamentos</h1>
+          <p className="subtle-text">Gerencie os agendamentos pendentes dos seus espaços</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Calendar className="w-6 h-6 icon-accent"/></div><div className="metric-display">{counts.total}</div></div><div className="card-title">Total</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-warning/10 rounded-lg"><Clock className="w-6 h-6 text-status-warning"/></div><div className="metric-display text-status-warning">{counts.pendentes}</div></div><div className="card-title">Pendentes</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><Check className="w-6 h-6 text-status-success"/></div><div className="metric-display text-status-success">{counts.aprovados}</div></div><div className="card-title">Aprovados</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-error-bg rounded-lg"><X className="w-6 h-6 text-status-error"/></div><div className="metric-display text-status-error">{counts.rejeitados}</div></div><div className="card-title">Rejeitados</div></CardContent></Card>
+      </div>
 
-      {/* Alerta de conflitos */}
       {counts.conflitos > 0 && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-              <div>
-                <p className="font-medium text-amber-800">
-                  {counts.conflitos} conflito(s) de horário detectado(s)
-                </p>
-                <p className="text-sm text-amber-700">
-                  Múltiplos agendamentos solicitaram o mesmo horário. Você precisa escolher qual aprovar.
-                </p>
-              </div>
+        <Card className="enhanced-card border-status-warning/50 bg-status-warning-bg">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-status-warning/20 rounded-full"><AlertTriangle className="w-5 h-5 text-status-warning" /></div>
+              <div className="flex-1"><div className="font-semibold text-status-warning-text text-balance">{counts.conflitos} conflito(s) de horário detectado(s)</div><div className="caption-text mt-1">É preciso escolher qual aprovar para resolver a pendência.</div></div>
+              <Button size="sm" variant="outline" onClick={() => document.getElementById('lista-agendamentos')?.scrollIntoView({ behavior: 'smooth' })}>Ver Conflitos</Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Filtros */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">Filtrar por status</h3>
-              <p className="text-sm text-foreground/50">Visualize agendamentos por status</p>
-            </div>
+      <Card className="enhanced-card">
+        <CardContent className="refined-spacing">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1"><h2 className="card-title">Filtrar Agendamentos</h2><p className="caption-text mt-1">Selecione um status para visualizar os agendamentos correspondentes.</p></div>
             <div className="flex flex-wrap gap-2">
-              <Button 
-                variant={filtroStatus === 'todos' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => setFiltroStatus('todos')}
-                className="hover:shadow-lg transition-shadow"
-              >
-                Todos ({counts.total})
-              </Button>
-              <Button 
-                variant={filtroStatus === 'pendente' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => setFiltroStatus('pendente')}
-                className="hover:shadow-lg transition-shadow"
-              >
-                Pendentes ({counts.pendentes})
-              </Button>
-              <Button 
-                variant={filtroStatus === 'aprovado' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => setFiltroStatus('aprovado')}
-                className="hover:shadow-lg transition-shadow"
-              >
-                Aprovados ({counts.aprovados})
-              </Button>
-              <Button 
-                variant={filtroStatus === 'rejeitado' ? 'default' : 'outline'} 
-                size="sm"
-                onClick={() => setFiltroStatus('rejeitado')}
-                className="hover:shadow-lg transition-shadow"
-              >
-                Rejeitados ({counts.rejeitados})
-              </Button>
+              {['todos', 'pendente', 'aprovado', 'rejeitado'].map(status => (
+                <Button key={status} variant={filtroStatus === status ? 'default' : 'outline'} size="sm" onClick={() => setFiltroStatus(status)}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)} ({counts[status as keyof typeof counts]})
+                </Button>
+              ))}
             </div>
           </div>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-yellow-600" />
-            Lista de Agendamentos
-          </CardTitle>
-          <CardDescription>
-            Agendamentos dos espaços sob sua responsabilidade
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      
+      <Card id="lista-agendamentos" className="enhanced-card">
+        <CardContent className="refined-spacing">
+          <div className="flex items-center gap-2 mb-6"><CheckCircle className="w-5 h-5 icon-muted" /><h2 className="card-title">Lista de Agendamentos</h2></div>
           <ResponsiveTable
             data={agendamentosFiltrados}
-            columns={[
-              {
-                key: 'espaco',
-                header: 'Espaço',
-                accessor: (agendamento) => getEspacoNome(agendamento.espacoId),
-                mobileLabel: 'Espaço'
-              },
-              {
-                key: 'usuario',
-                header: 'Usuário',
-                accessor: (agendamento) => getUsuarioNome(agendamento.usuarioId),
-                mobileLabel: 'Usuário',
-                hiddenOnMobile: true
-              },
-              {
-                key: 'data',
-                header: 'Data',
-                accessor: (agendamento) => new Date(agendamento.data).toLocaleDateString('pt-BR'),
-                mobileLabel: 'Data'
-              },
-              {
-                key: 'horario',
-                header: 'Horário',
-                accessor: (agendamento) => (
-                  <div className="flex items-center gap-2">
-                    <span>{formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)}</span>
-                                         {hasConflict(agendamento.id) && (
-                       <AlertTriangle className="h-4 w-4 text-amber-500" />
-                     )}
-                  </div>
-                ),
-                mobileLabel: 'Horário',
-                hiddenOnMobile: true
-              },
-              {
-                key: 'status',
-                header: 'Status',
-                accessor: (agendamento) => (
-                  <div className="flex items-center gap-2">
-                    <Badge className={getStatusColor(agendamento.status)} variant="outline">
-                      {getStatusLabel(agendamento.status)}
-                    </Badge>
-                    {hasConflict(agendamento.id) && (
-                      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
-                        Conflito
-                      </Badge>
-                    )}
-                  </div>
-                ),
-                mobileLabel: 'Status'
-              },
-              {
-                key: 'observacoes',
-                header: 'Observações',
-                accessor: (agendamento) => (
-                  <span className="text-sm text-foreground truncate block max-w-[150px]">
-                    {agendamento.observacoes || '-'}
-                  </span>
-                ),
-                mobileLabel: 'Observações',
-                hiddenOnMobile: true
-              },
-              {
-                key: 'acoes',
-                header: 'Ações',
-                accessor: (agendamento) => (
-                  <>
-                    {agendamento.status === 'pendente' && (
-                      <div className="flex gap-2">
-                        {hasConflict(agendamento.id) ? (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleConflictResolution(agendamento.id)}
-                            className="hover:bg-amber-50 hover:border-amber-200 text-amber-600 hover:text-amber-700"
-                          >
-                            <Users className="h-4 w-4 mr-1" />
-                            Resolver
-                          </Button>
-                        ) : (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleStatusChange(agendamento.id, 'aprovado')}
-                              className="hover:bg-green-50 hover:border-green-200 text-green-600 hover:text-green-700"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleStatusChange(agendamento.id, 'rejeitado')}
-                              className="hover:bg-red-50 hover:border-red-200 text-red-600 hover:text-red-700"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    {agendamento.status !== 'pendente' && (
-                      <span className="text-sm text-gray-500">
-                        {agendamento.status === 'aprovado' ? 'Aprovado' : 'Rejeitado'}
-                      </span>
-                    )}
-                  </>
-                ),
-                mobileLabel: 'Ações'
-              }
-            ]}
+            columns={columns}
+            mobileCardRender={mobileCardRender}
             emptyState={
-              <div className="text-center py-8">
-                <div className="text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="font-medium">Nenhum agendamento encontrado</p>
-                  <p className="text-sm">Não há agendamentos para o filtro selecionado</p>
-                </div>
+              <div className="text-center py-12">
+                <Calendar className="w-12 h-12 icon-muted mx-auto mb-4" />
+                <div className="subtle-text">Nenhum agendamento encontrado</div>
+                <p className="caption-text mt-2">Não há agendamentos para o filtro selecionado.</p>
               </div>
             }
           />
         </CardContent>
       </Card>
 
-      {/* Dialog de resolução de conflitos */}
       <Dialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-              Resolver Conflito de Horário
-            </DialogTitle>
-          </DialogHeader>
-          
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-status-warning" />Resolver Conflito de Horário</DialogTitle></DialogHeader>
           {selectedConflictAgendamento && (
             <div className="space-y-4">
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-800">
-                  <strong>Conflito detectado:</strong> Múltiplos agendamentos para o mesmo horário.
-                  Escolha qual agendamento será aprovado. Os demais serão automaticamente rejeitados.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900">Agendamentos em conflito:</h4>
-                {allConflictAgendamentos.map((agendamento, index) => (
-                  <div key={agendamento.id} className="border rounded-lg p-4 hover:bg-gray-50">
+              <div className="p-4 bg-status-warning-bg border border-status-warning/20 rounded-lg"><p className="body-text text-status-warning-text"><strong>Conflito detectado:</strong> Múltiplos agendamentos para o mesmo horário. Escolha qual aprovar. Os demais serão automaticamente rejeitados.</p></div>
+              <div className="space-y-3"><h4 className="card-title">Agendamentos em conflito:</h4>
+                {allConflictAgendamentos.map(agendamento => (
+                  <div key={agendamento.id} className="border rounded-lg p-4 hover:bg-muted/50">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
-                        <p className="font-medium text-gray-900">
-                          {getUsuarioNome(agendamento.usuarioId)}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {getEspacoNome(agendamento.espacoId)} • {formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {new Date(agendamento.data).toLocaleDateString('pt-BR')}
-                        </p>
-                        {agendamento.observacoes && (
-                          <p className="text-sm text-gray-500">
-                            <strong>Obs:</strong> {agendamento.observacoes}
-                          </p>
-                        )}
+                        <p className="font-semibold body-text">{getUsuarioNome(agendamento.usuarioId)}</p>
+                        <p className="caption-text">{getEspacoNome(agendamento.espacoId)} • {formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula)}</p>
+                        <p className="caption-text">{formatDate(agendamento.data)}</p>
+                        {agendamento.observacoes && <p className="caption-text italic"><strong>Obs:</strong> {agendamento.observacoes}</p>}
                       </div>
-                      <Button
-                        onClick={() => {
-                          const rejectedIds = allConflictAgendamentos
-                            .filter(a => a.id !== agendamento.id)
-                            .map(a => a.id);
-                          resolveConflict(agendamento.id, rejectedIds);
-                        }}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <Check className="h-4 w-4 mr-2" />
-                        Aprovar Este
-                      </Button>
+                      <Button onClick={() => resolveConflict(agendamento.id, allConflictAgendamentos.filter(a => a.id !== agendamento.id).map(a => a.id))} className="bg-status-success hover:bg-status-success/90 text-status-success-foreground"><Check className="h-4 w-4 mr-2" />Aprovar Este</Button>
                     </div>
                   </div>
                 ))}
               </div>
-
               <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => setConflictDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => {
-                    allConflictAgendamentos.forEach(a => {
-                      actions.updateAgendamentoStatus(a.id, 'rejeitado');
-                    });
-                    notifications.info('Todos rejeitados', 'Todos os agendamentos em conflito foram rejeitados.');
-                    setConflictDialogOpen(false);
-                  }}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Rejeitar Todos
+                <Button variant="outline" onClick={() => setConflictDialogOpen(false)}>Cancelar</Button>
+                <Button variant="destructive" onClick={() => { allConflictAgendamentos.forEach(a => actions.updateAgendamentoStatus(a.id, 'rejeitado')); notifications.info('Todos rejeitados', 'Todos os agendamentos em conflito foram rejeitados.'); setConflictDialogOpen(false); }}>
+                  <X className="h-4 w-4 mr-2" />Rejeitar Todos
                 </Button>
               </div>
             </div>

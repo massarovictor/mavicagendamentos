@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Usuario, Espaco, Agendamento, AgendamentoFixo } from '@/types';
 
@@ -21,8 +20,8 @@ const INITIAL_DATA = {
       espacoId: 1,
       usuarioId: 3,
       data: new Date().toISOString().split('T')[0],
-      horaInicio: '14:00',
-      horaFim: '16:00',
+      aulaInicio: 6,
+      aulaFim: 7,
       status: 'pendente' as const,
       observacoes: 'Reunião de planejamento',
       criadoEm: new Date().toISOString()
@@ -32,8 +31,8 @@ const INITIAL_DATA = {
       espacoId: 2,
       usuarioId: 4,
       data: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-      horaInicio: '09:00',
-      horaFim: '11:00',
+      aulaInicio: 2,
+      aulaFim: 3,
       status: 'aprovado' as const,
       observacoes: 'Apresentação do projeto',
       criadoEm: new Date().toISOString()

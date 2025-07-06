@@ -1,220 +1,185 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/ui/loading-state';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
-import { Settings, Users, Calendar, Clock, TrendingUp, Building2 } from 'lucide-react';
+import { Settings, Users, Calendar, Clock, Building2, CheckCircle, Cpu } from 'lucide-react';
 import { formatDateTime } from '@/utils/format';
 import { NumeroAula } from '@/types';
-import { PageHeader } from '@/components/ui/page-header';
 
 const MeusEspacos = () => {
   const { espacos, agendamentos, loading } = useSupabaseData();
   const { usuario } = useAuth();
 
-  const meusEspacos = espacos.filter(e => usuario?.espacos?.includes(e.id));
+  const meusEspacos = useMemo(() => 
+    espacos.filter(e => usuario?.espacos?.includes(e.id)),
+    [espacos, usuario]
+  );
 
-  const getEspacoStats = (espacoId: number) => {
-    const agendamentosEspaco = agendamentos.filter(a => a.espacoId === espacoId);
-    const pendentes = agendamentosEspaco.filter(a => a.status === 'pendente').length;
-    const aprovados = agendamentosEspaco.filter(a => a.status === 'aprovado').length;
-    const rejeitados = agendamentosEspaco.filter(a => a.status === 'rejeitado').length;
-    const proximosAgendamentos = agendamentosEspaco.filter(a => 
-      new Date(a.data) >= new Date() && a.status === 'aprovado'
-    );
-
-    // Taxa de ocupação (últimos 30 dias)
-    const hoje = new Date();
-    const treintaDiasAtras = new Date(hoje.getTime() - (30 * 24 * 60 * 60 * 1000));
-    const agendamentosUltimos30Dias = agendamentosEspaco.filter(a => {
-      const dataAgendamento = new Date(a.data);
-      return dataAgendamento >= treintaDiasAtras && dataAgendamento <= hoje && a.status === 'aprovado';
+  const getEspacoStats = useMemo(() => {
+    const statsMap = new Map();
+    meusEspacos.forEach(espaco => {
+        const agendamentosEspaco = agendamentos.filter(a => a.espacoId === espaco.id);
+        const pendentes = agendamentosEspaco.filter(a => a.status === 'aprovado').length;
+        const aprovados = agendamentosEspaco.filter(a => a.status === 'pendente').length;
+        const hoje = new Date();
+        const treintaDiasAtras = new Date(hoje.getTime() - (30 * 24 * 60 * 60 * 1000));
+        const taxaOcupacao = agendamentosEspaco.filter(a => {
+            const dataAgendamento = new Date(a.data);
+            return dataAgendamento >= treintaDiasAtras && dataAgendamento <= hoje && a.status === 'aprovado';
+        }).length;
+        statsMap.set(espaco.id, { total: agendamentosEspaco.length, pendentes, aprovados, taxaOcupacao });
     });
-    const taxaOcupacao = agendamentosUltimos30Dias.length;
+    return statsMap;
+  }, [agendamentos, meusEspacos]);
 
-    return {
-      total: agendamentosEspaco.length,
-      pendentes,
-      aprovados,
-      rejeitados,
-      proximos: proximosAgendamentos.length,
-      taxaOcupacao,
-      proximoAgendamento: proximosAgendamentos.sort((a, b) => 
-        new Date(a.data).getTime() - new Date(b.data).getTime()
-      )[0]
-    };
-  };
-
-  const getTotalStats = () => {
+  const totalStats = useMemo(() => {
     return meusEspacos.reduce((acc, espaco) => {
-      const stats = getEspacoStats(espaco.id);
-      return {
-        totalAgendamentos: acc.totalAgendamentos + stats.total,
-        totalPendentes: acc.totalPendentes + stats.pendentes,
-        totalAprovados: acc.totalAprovados + stats.aprovados,
-        totalCapacidade: acc.totalCapacidade + espaco.capacidade
-      };
+      const stats = getEspacoStats.get(espaco.id) || { total: 0, pendentes: 0, aprovados: 0 };
+      acc.totalAgendamentos += stats.total;
+      acc.totalPendentes += stats.pendentes;
+      acc.totalAprovados += stats.aprovados;
+      acc.totalCapacidade += espaco.capacidade;
+      return acc;
     }, { totalAgendamentos: 0, totalPendentes: 0, totalAprovados: 0, totalCapacidade: 0 });
-  };
+  }, [meusEspacos, getEspacoStats]);
+
+  const equipamentosComuns = useMemo(() => {
+    const allEquipamentos = meusEspacos.flatMap(e => e.equipamentos || []);
+    const count = allEquipamentos.reduce((acc, eq) => {
+      acc[eq] = (acc[eq] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [meusEspacos]);
 
   if (loading) {
     return <LoadingSpinner message="Carregando espaços..." />;
   }
 
-  const totalStats = getTotalStats();
-
-  // Estatísticas para o PageHeader
-  const pageStats = [
-    {
-      label: 'Total de Espaços',
-      value: meusEspacos.length,
-      icon: Building2,
-      color: 'bg-purple-500'
-    },
-    {
-      label: 'Agendamentos',
-      value: totalStats.totalAgendamentos,
-      icon: Calendar,
-      color: 'bg-blue-500'
-    },
-    {
-      label: 'Pendentes',
-      value: totalStats.totalPendentes,
-      icon: Clock,
-      color: 'bg-orange-500'
-    },
-    {
-      label: 'Capacidade Total',
-      value: totalStats.totalCapacidade,
-      icon: Users,
-      color: 'bg-green-500'
-    }
-  ];
-
   return (
-    <div className="space-y-6 p-6 bg-background text-foreground">
-      {/* PageHeader */}
-      <PageHeader
-        title="Meus Espaços"
-        subtitle="Gerencie os espaços sob sua responsabilidade"
-        icon={Building2}
-        stats={pageStats}
-      />
-
-      {meusEspacos.length === 0 ? (
-        <Card className="hover:shadow-lg transition-shadow bg-card text-foreground">
-          <CardContent className="text-center py-12">
-            <div className="text-muted-foreground">
-              <Settings className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p className="font-medium text-lg">Nenhum espaço atribuído</p>
-              <p className="text-sm">Contate o administrador para obter acesso a espaços</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="section-title">Meus Espaços</h1>
+          <p className="subtle-text">Gerencie os espaços sob sua responsabilidade.</p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Building2 className="w-6 h-6 icon-accent" />
+              </div>
+              <div className="metric-display">{meusEspacos.length}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Espaços</div>
+              <div className="caption-text">Gerenciados</div>
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <>
-          {/* Grid de Espaços */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {meusEspacos.map((espaco) => {
-              const stats = getEspacoStats(espaco.id);
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-chart-2/10 rounded-lg">
+                <Users className="w-6 h-6 text-chart-2" />
+              </div>
+              <div className="metric-display">{totalStats.totalCapacidade}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Capacidade</div>
+              <div className="caption-text">Total de usuários</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enhanced-card">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-chart-3/10 rounded-lg">
+                <Calendar className="w-6 h-6 text-chart-3" />
+              </div>
+              <div className="metric-display">{totalStats.totalAgendamentos}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Agendamentos</div>
+              <div className="caption-text">Total</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enhanced-card border-status-warning-border/50">
+          <CardContent className="refined-spacing">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-status-warning/10 rounded-lg">
+                <Clock className="w-6 h-6 text-status-warning" />
+              </div>
+              <div className="metric-display text-status-warning">{totalStats.totalPendentes}</div>
+            </div>
+            <div className="space-y-1">
+              <div className="card-title">Pendentes</div>
+              <div className="caption-text">Requerem ação</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {meusEspacos.length === 0 ? (
+              <Card className="enhanced-card md:col-span-2 xl:col-span-3">
+              <CardContent className="text-center py-12">
+                  <div className="text-muted-foreground">
+                  <Settings className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                  <p className="font-medium text-lg">Nenhum espaço atribuído</p>
+                  <p className="text-sm">Contate o administrador para obter acesso a espaços</p>
+                  </div>
+              </CardContent>
+              </Card>
+          ) : (
+              meusEspacos.map((espaco) => {
+              const stats = getEspacoStats.get(espaco.id) || { total: 0, pendentes: 0, aprovados: 0, taxaOcupacao: 0 };
               return (
-                <Card key={espaco.id} className="overflow-hidden hover:shadow-lg transition-shadow bg-card text-foreground">
-                  <CardHeader className="pb-3">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <CardTitle className="text-lg font-semibold text-foreground truncate">
-                        {espaco.nome}
-                      </CardTitle>
-                      <Badge 
-                        variant={espaco.ativo ? "default" : "secondary"}
-                        className={`text-xs w-fit ${
-                          espaco.ativo 
-                            ? 'bg-success/20 text-success-foreground' 
-                            : 'bg-muted text-muted-foreground'
-                        }`}
-                      >
-                        {espaco.ativo ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </div>
-                    <CardDescription className="text-sm text-muted-foreground line-clamp-2">
-                      {espaco.descricao || "Sem descrição disponível"}
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                      <span className="font-medium">{espaco.capacidade} pessoas</span>
-                    </div>
-
-                    {espaco.equipamentos && espaco.equipamentos.length > 0 && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Equipamentos:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {espaco.equipamentos.slice(0, 3).map((eq, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs bg-accent/60 text-accent-foreground">
-                              {eq}
-                            </Badge>
-                          ))}
-                          {espaco.equipamentos.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{espaco.equipamentos.length - 3}
-                            </Badge>
+                  <Card key={espaco.id} className="enhanced-card flex flex-col">
+                      <CardHeader className="pb-4">
+                          <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="text-lg font-bold text-foreground">
+                              {espaco.nome}
+                          </CardTitle>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-md flex items-center gap-1.5 w-fit ${espaco.ativo ? 'bg-status-success-subtle text-status-success-foreground' : 'bg-muted/60 text-muted-foreground'}`}>
+                              {espaco.ativo ? <CheckCircle className="w-3.5 h-3.5" /> : null}
+                              {espaco.ativo ? 'Ativo' : 'Inativo'}
+                          </span>
+                          </div>
+                          <CardDescription className="text-sm text-muted-foreground line-clamp-2 h-[40px] pt-1">
+                          {espaco.descricao || "Sem descrição disponível."}
+                          </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-grow space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Users className="h-4 w-4 flex-shrink-0" />
+                              <span className="font-medium">{espaco.capacidade} pessoas</span>
+                          </div>
+                          {espaco.equipamentos && espaco.equipamentos.length > 0 && (
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Cpu className="h-4 w-4 flex-shrink-0" />
+                                  <span className="font-medium">{espaco.equipamentos.join(', ')}</span>
+                              </div>
                           )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Taxa de ocupação */}
-                    <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                        <span>Últimos 30 dias</span>
-                      </div>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary">
-                        {stats.taxaOcupacao} agendamentos
-                      </Badge>
-                    </div>
-
-                    {/* Próximo agendamento */}
-                    {stats.proximoAgendamento && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2 rounded">
-                        <Clock className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          Próximo: {formatDateTime(stats.proximoAgendamento.data, stats.proximoAgendamento.aulaInicio as NumeroAula)}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Estatísticas */}
-                    <div className="grid grid-cols-2 gap-3 pt-3 border-t">
-                      <div className="text-center p-2 bg-primary/10 rounded">
-                        <div className="text-xl font-bold text-primary">{stats.total}</div>
-                        <div className="text-xs text-muted-foreground">Total</div>
-                      </div>
-                      <div className="text-center p-2 bg-warning/10 rounded">
-                        <div className="text-xl font-bold text-warning">{stats.pendentes}</div>
-                        <div className="text-xs text-muted-foreground">Pendentes</div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="text-center p-2 bg-success/10 rounded">
-                        <div className="text-xl font-bold text-success">{stats.aprovados}</div>
-                        <div className="text-xs text-muted-foreground">Aprovados</div>
-                      </div>
-                      <div className="text-center p-2 bg-chart-5/10 rounded">
-                        <div className="text-xl font-bold text-chart-5">{stats.proximos}</div>
-                        <div className="text-xs text-muted-foreground">Próximos</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                      <CardContent className="mt-auto pt-4 border-t">
+                          <div className="space-y-2 text-sm">
+                              <div className="flex justify-between items-center subtle-text"><span>Agendamentos Aprovados</span><span className="font-semibold text-foreground">{stats.aprovados}</span></div>
+                              <div className="flex justify-between items-center subtle-text"><span>Agendamentos Pendentes</span><span className="font-semibold text-foreground">{stats.pendentes}</span></div>
+                              <div className="flex justify-between items-center subtle-text"><span>Ocupação (30d)</span><span className="font-semibold text-foreground">{stats.taxaOcupacao}</span></div>
+                          </div>
+                      </CardContent>
+                  </Card>
               );
-            })}
-          </div>
-        </>
-      )}
+              })
+          )}
+      </div>
     </div>
   );
 };
