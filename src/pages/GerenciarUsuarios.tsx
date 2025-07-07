@@ -70,7 +70,7 @@ const GerenciarUsuarios = () => {
 
   const handleEdit = (usuario: Usuario) => {
     setEditingUsuario(usuario);
-    form.setValues({ nome: usuario.nome, email: usuario.email, tipo: usuario.tipo, espacos: usuario.espacos || [], senha: '' });
+    form.setValues({ nome: usuario.nome, email: usuario.email, tipo: usuario.tipo, espacos: usuario.espacos || [], senha: usuario.senha || '' });
     setIsDialogOpen(true);
   };
 

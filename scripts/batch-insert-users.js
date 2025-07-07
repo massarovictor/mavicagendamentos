@@ -121,7 +121,7 @@ records.forEach(record => {
             const hashedPassword = bcrypt.hashSync(cpf, saltRounds);
 
             // Generate SQL INSERT statement
-            const sql = `INSERT INTO public.usuarios (nome, email, tipo, senha_hash, ativo) VALUES ('${name}', '${email}', 'usuario', '${hashedPassword}', true);\n`;
+            const sql = `INSERT INTO public.usuarios (nome, email, tipo, senha, ativo) VALUES ('${name}', '${email}', 'usuario', '${hashedPassword}', true);\n`;
             sqlStatements += sql;
         }
     });

@@ -200,6 +200,7 @@ export const useSupabaseData = () => {
           ativo: usuario.ativo,
           espacos: espacosFormatado,
           telefone: usuario.telefone || null,
+          senha: usuario.senha ? usuario.senha : null, // Não enviar senha se não for atualizada
         })
         .eq('id', userUuid);
 
