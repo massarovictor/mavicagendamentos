@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Usuario } from '@/types';
+import { verifyPasswd } from '@/utils/verifyPasswd';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -43,7 +44,13 @@ const Login = () => {
 
       // O login é permitido se o usuário for encontrado, sem verificar a senha.
       const usuario: Usuario = usuarioData;
-
+      // Verificar a senha usando a função verifyPasswd
+      const senhaVerified = verifyPasswd(senha, usuario.senha);
+      if (!senhaVerified) {
+        notifications.error("Erro de Login", "Senha incorreta");
+        setLoading(false);
+        return;
+      }
       login(usuario);
       notifications.success("Login realizado", `Bem-vindo, ${usuario.nome}!`);
 
