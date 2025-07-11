@@ -18,6 +18,7 @@ import AprovarAgendamentos from "./pages/AprovarAgendamentos";
 import EspacosDisponiveis from "./pages/EspacosDisponiveis";
 import AgendamentosFixos from "./pages/AgendamentosFixos";
 import Debug from "./pages/Debug";
+import TesteNotificacaoCompleto from "./pages/TesteNotificacaoCompleto";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +121,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Debug />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/teste-notificacao" 
+        element={
+          <ProtectedRoute>
+            <TesteNotificacaoCompleto />
           </ProtectedRoute>
         } 
       />

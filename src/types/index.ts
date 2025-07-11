@@ -7,8 +7,17 @@ export interface Usuario {
   senha?: string;
   tipo: TipoUsuario;
   ativo: boolean;
-  espacos?: number[]; // IDs dos espaços que o gestor gerencia
+  espacos?: number[]; // IDs dos espaços que o gestor gerencia (mantido para compatibilidade)
   telefone?: string;
+}
+
+export interface EspacoGestor {
+  id: number;
+  espacoId: number;
+  gestorId: string; // UUID do gestor
+  dataAtribuicao: string;
+  ativo: boolean;
+  criadoEm: string;
 }
 
 export interface Espaco {

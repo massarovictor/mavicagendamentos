@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database';
 import { Usuario, Espaco, Agendamento, AgendamentoFixo } from '@/types';
+import { NotificationService } from '@/lib/notificationService';
 
 type Tables = Database['public']['Tables'];
 type UsuarioRow = Tables['usuarios']['Row'];
@@ -73,7 +74,7 @@ const convertToUsuarioInsert = (usuario: Usuario, userUuid: string): Tables['usu
   email: usuario.email,
   tipo: usuario.tipo,
   ativo: usuario.ativo,
-  espacos: usuario.espacos || null,
+  espacos: usuario.espacos || null, // Array será enviado diretamente
   telefone: usuario.telefone || null,
 });
 
@@ -186,28 +187,40 @@ export const useSupabaseData = () => {
       const userUuid = userUuidMap.get(usuario.id);
       if (!userUuid) throw new Error('UUID do usuário não encontrado');
 
-      // Formatar o array de espaços para o formato do PostgreSQL: '{1,2,3}'
-      const espacosFormatado = usuario.espacos && usuario.espacos.length > 0
-        ? `{${usuario.espacos.join(',')}}`
-        : null;
+      // Log detalhado para debug
+      console.log('🔧 Atualizando usuário:', {
+        nome: usuario.nome,
+        tipo: usuario.tipo,
+        espacosOriginais: usuario.espacos,
+        espacosTipo: typeof usuario.espacos,
+        espacosLength: usuario.espacos?.length,
+        userUuid
+      });
 
-      const { error } = await supabase
+      const dadosParaAtualizar = {
+        nome: usuario.nome,
+        email: usuario.email,
+        tipo: usuario.tipo,
+        ativo: usuario.ativo,
+        espacos: usuario.espacos || null, // Enviar array diretamente
+        telefone: usuario.telefone || null,
+        senha: usuario.senha ? usuario.senha : null, // Não enviar senha se não for atualizada
+      };
+
+      console.log('📤 Dados sendo enviados para Supabase:', dadosParaAtualizar);
+
+      const { data, error } = await supabase
         .from('usuarios')
-        .update({
-          nome: usuario.nome,
-          email: usuario.email,
-          tipo: usuario.tipo,
-          ativo: usuario.ativo,
-          espacos: espacosFormatado,
-          telefone: usuario.telefone || null,
-          senha: usuario.senha ? usuario.senha : null, // Não enviar senha se não for atualizada
-        })
-        .eq('id', userUuid);
+        .update(dadosParaAtualizar)
+        .eq('id', userUuid)
+        .select(); // Retornar os dados atualizados
 
       if (error) {
-        console.error('Erro detalhado do Supabase:', error);
+        console.error('❌ Erro detalhado do Supabase:', error);
         throw error;
       }
+
+      console.log('✅ Usuário atualizado com sucesso:', data);
 
       await loadData();
       return true;
@@ -303,6 +316,13 @@ export const useSupabaseData = () => {
       const userUuid = userUuidMap.get(agendamento.usuarioId);
       if (!userUuid) throw new Error('UUID do usuário não encontrado');
 
+      // Capturar dados ANTES da inserção para evitar problemas de timing
+      const usuario = state.usuarios.find(u => u.id === agendamento.usuarioId);
+      const espaco = state.espacos.find(e => e.id === agendamento.espacoId);
+      const todosUsuarios = [...state.usuarios]; // Cópia dos usuários atuais
+
+      console.log('🔄 Criando agendamento:', { agendamento, usuario: usuario?.nome, espaco: espaco?.nome });
+
       const { error } = await supabase
         .from('agendamentos')
         .insert(convertToAgendamentoInsert(agendamento, userUuid));
@@ -310,16 +330,37 @@ export const useSupabaseData = () => {
       if (error) throw error;
 
       await loadData();
+
+      // Enviar notificação por email para gestores após criação bem-sucedida
+      try {
+        if (usuario && espaco) {
+          console.log('📧 Enviando notificação para gestores...');
+          const resultado = await NotificationService.notificarTodosGestores(agendamento, usuario, espaco, todosUsuarios);
+          console.log('📧 Resultado da notificação:', resultado);
+        } else {
+          console.warn('⚠️ Não foi possível enviar notificação: dados incompletos', { 
+            usuario: !!usuario, 
+            espaco: !!espaco 
+          });
+        }
+      } catch (emailError) {
+        console.warn('⚠️ Falha ao enviar notificação por email:', emailError);
+        // Não falha a operação se o email falhar
+      }
+
       return true;
     } catch (error) {
-      console.error('Erro ao adicionar agendamento:', error);
+      console.error('❌ Erro ao adicionar agendamento:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar agendamento' }));
       return false;
     }
-  }, [userUuidMap, loadData]);
+  }, [userUuidMap, loadData, state.usuarios, state.espacos]);
 
   const updateAgendamentoStatus = useCallback(async (agendamentoId: number, status: 'pendente' | 'aprovado' | 'rejeitado'): Promise<boolean> => {
     try {
+      // Buscar o agendamento antes da atualização para ter os dados para notificação
+      const agendamentoAtual = state.agendamentos.find(a => a.id === agendamentoId);
+      
       const { error } = await supabase
         .from('agendamentos')
         .update({ status })
@@ -328,13 +369,37 @@ export const useSupabaseData = () => {
       if (error) throw error;
 
       await loadData();
+
+      // Enviar notificação por email para o usuário sobre a decisão
+      if (agendamentoAtual && (status === 'aprovado' || status === 'rejeitado')) {
+        try {
+          const usuario = state.usuarios.find(u => u.id === agendamentoAtual.usuarioId);
+          const espaco = state.espacos.find(e => e.id === agendamentoAtual.espacoId);
+          
+          // Encontrar um gestor para identificar quem aprovou/rejeitou (para fins de email)
+          const gestores = NotificationService.findGestoresDoEspaco(agendamentoAtual.espacoId, state.usuarios);
+          const gestor = gestores[0]; // Usar o primeiro gestor encontrado
+          
+          if (usuario && espaco && gestor) {
+            if (status === 'aprovado') {
+              await NotificationService.notificarUsuarioAprovacao(agendamentoAtual, usuario, espaco, gestor);
+            } else if (status === 'rejeitado') {
+              await NotificationService.notificarUsuarioRejeicao(agendamentoAtual, usuario, espaco, gestor);
+            }
+          }
+        } catch (emailError) {
+          console.warn('Aviso: Falha ao enviar notificação por email:', emailError);
+          // Não falha a operação se o email falhar
+        }
+      }
+
       return true;
     } catch (error) {
       console.error('Erro ao atualizar status do agendamento:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar agendamento' }));
       return false;
     }
-  }, [loadData]);
+  }, [loadData, state.agendamentos, state.usuarios, state.espacos]);
 
   const updateAgendamento = useCallback(async (agendamento: Agendamento): Promise<boolean> => {
     try {

@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/send-email.js": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "VITE_SMTP_SERVER": "smtp.gmail.com",
+    "VITE_SMTP_PORT": "587"
+  }
+} 
