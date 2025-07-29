@@ -42,9 +42,33 @@ const Login = () => {
         return;
       }
 
-      // Verificar a senha usando a função verifyPasswd
+      // Verificar a senha de forma robusta
       const usuario: Usuario = usuarioData;
-      const senhaVerified = verifyPasswd(senha, usuario.senha);
+      let senhaVerified = false;
+      
+      if (usuario.senha) {
+        // Detectar se é hash bcrypt (começa com $2a$, $2b$, $2x$, $2y$)
+        if (usuario.senha.startsWith('$2')) {
+          try {
+            const bcrypt = await import('bcryptjs');
+            senhaVerified = await bcrypt.compare(senha, usuario.senha);
+          } catch (error) {
+            console.warn('Erro ao verificar hash bcrypt:', error);
+            // Fallback para comparação simples
+            senhaVerified = verifyPasswd(senha, usuario.senha);
+          }
+        } else {
+          // Senha em texto simples (desenvolvimento)
+          senhaVerified = verifyPasswd(senha, usuario.senha);
+        }
+      } else {
+        // Tentar com CPF como senha (padrão do sistema)
+        // Buscar CPF do usuário se disponível
+        if (usuarioData.cpf) {
+          senhaVerified = senha === usuarioData.cpf;
+        }
+      }
+      
       if (!senhaVerified) {
         notifications.error("Erro de Login", "Senha incorreta");
         setLoading(false);
