@@ -183,17 +183,98 @@ const GerenciarUsuarios = () => {
           <h1 className="section-title text-balance">Gerenciar Usuários</h1>
           <p className="subtle-text">Crie, edite e gerencie os usuários do sistema.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}><DialogTrigger asChild><Button onClick={() => form.reset()}><Plus className="h-4 w-4 mr-2" />Novo Usuário</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>{editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle><DialogDescription>Preencha as informações do usuário.</DialogDescription></DialogHeader>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => form.reset()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Usuário
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingUsuario ? 'Editar Usuário' : 'Novo Usuário'}</DialogTitle>
+              <DialogDescription>Preencha as informações do usuário.</DialogDescription>
+            </DialogHeader>
             <form onSubmit={form.handleSubmit} className="space-y-4 pt-4">
-              <div><Label htmlFor="nome">Nome *</Label><Input id="nome" value={form.values.nome} onChange={e => form.setValue('nome', e.target.value)} placeholder="Nome Completo" className={form.errors.nome ? 'border-red-500' : ''}/></div>
-              <div><Label htmlFor="email">Email *</Label><Input id="email" type="email" value={form.values.email} onChange={e => form.setValue('email', e.target.value)} placeholder="email@exemplo.com" className={form.errors.email ? 'border-red-500' : ''}/></div>
-              <div><Label htmlFor="senha">Senha {editingUsuario ? '(deixe em branco para manter)' : '*'}</Label><Input id="senha" type="password" value={form.values.senha} onChange={e => form.setValue('senha', e.target.value)} className={form.errors.senha ? 'border-red-500' : ''}/></div>
-              <div><Label htmlFor="tipo">Tipo *</Label><Select value={form.values.tipo} onValueChange={(v) => form.setValue('tipo', v as TipoUsuario)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="usuario">Usuário</SelectItem><SelectItem value="gestor">Gestor</SelectItem><SelectItem value="admin">Admin</SelectItem></SelectContent></Select></div>
+              <div>
+                <Label htmlFor="nome">Nome *</Label>
+                <Input 
+                  id="nome" 
+                  value={form.values.nome} 
+                  onChange={e => form.setValue('nome', e.target.value)} 
+                  placeholder="Nome Completo" 
+                  className={form.errors.nome ? 'border-red-500' : ''}
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email *</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={form.values.email} 
+                  onChange={e => form.setValue('email', e.target.value)} 
+                  placeholder="email@exemplo.com" 
+                  className={form.errors.email ? 'border-red-500' : ''}
+                />
+              </div>
+              <div>
+                <Label htmlFor="senha">
+                  Senha {editingUsuario ? '(deixe em branco para manter)' : '*'}
+                </Label>
+                <Input 
+                  id="senha" 
+                  type="password" 
+                  value={form.values.senha} 
+                  onChange={e => form.setValue('senha', e.target.value)} 
+                  className={form.errors.senha ? 'border-red-500' : ''}
+                />
+              </div>
+              <div>
+                <Label htmlFor="tipo">Tipo *</Label>
+                <Select value={form.values.tipo} onValueChange={(v) => form.setValue('tipo', v as TipoUsuario)}>
+                  <SelectTrigger>
+                    <SelectValue/>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="usuario">Usuário</SelectItem>
+                    <SelectItem value="gestor">Gestor</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               {form.values.tipo === 'gestor' && (
-                <div className="space-y-2"><Label>Espaços Gerenciados</Label><div className="grid grid-cols-2 gap-2 border p-2 rounded-md max-h-32 overflow-y-auto">{espacos.filter(e => e.ativo).map(espaco => <div key={espaco.id} className="flex items-center gap-2"><Checkbox id={`espaco-${espaco.id}`} checked={form.values.espacos.includes(espaco.id)} onCheckedChange={checked => form.setValue('espacos', checked ? [...form.values.espacos, espaco.id] : form.values.espacos.filter(id => id !== espaco.id))}/><Label htmlFor={`espaco-${espaco.id}`} className="font-normal">{espaco.nome}</Label></div>)}</div></div>
+                <div className="space-y-2">
+                  <Label>Espaços Gerenciados</Label>
+                  <div className="grid grid-cols-2 gap-2 border p-2 rounded-md max-h-32 overflow-y-auto">
+                    {espacos.filter(e => e.ativo).map(espaco => (
+                      <div key={espaco.id} className="flex items-center gap-2">
+                        <Checkbox 
+                          id={`espaco-${espaco.id}`} 
+                          checked={form.values.espacos.includes(espaco.id)} 
+                          onCheckedChange={checked => 
+                            form.setValue('espacos', 
+                              checked 
+                                ? [...form.values.espacos, espaco.id] 
+                                : form.values.espacos.filter(id => id !== espaco.id)
+                            )
+                          }
+                        />
+                        <Label htmlFor={`espaco-${espaco.id}`} className="font-normal">
+                          {espaco.nome}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
-              <DialogFooter><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit" disabled={form.isSubmitting}>{form.isSubmitting ? 'Salvando...' : 'Salvar'}</Button></DialogFooter>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={form.isSubmitting}>
+                  {form.isSubmitting ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>

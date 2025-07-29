@@ -37,7 +37,7 @@ serve(async (req) => {
       username: Deno.env.get('SMTP_USERNAME') || '',
       password: Deno.env.get('SMTP_PASSWORD') || '',
       from_email: Deno.env.get('FROM_EMAIL') || '',
-      from_name: 'Sistema Easy Arrange'
+      from_name: 'Sistema Mavic'
     };
 
     // Validar configurações
@@ -135,7 +135,7 @@ async function sendEmailViaAPI(emailData: {
     //       to_email: emailData.to,
     //       subject: emailData.subject,
     //       html_content: emailData.html,
-    //       from_name: 'Sistema Easy Arrange'
+    //       from_name: 'Sistema Mavic'
     //     }
     //   })
     // });

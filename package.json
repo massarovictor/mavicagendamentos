@@ -9,7 +9,12 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "email-server": "node server.js"
+    "email-server": "node server.js",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "clean-logs": "node scripts/remove-console-logs.js",
+    "pre-production": "npm run clean-logs && npm run test && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -85,7 +90,6 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
-    "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",

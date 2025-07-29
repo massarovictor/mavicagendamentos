@@ -1,3 +1,5 @@
+import { emailLog, error } from '@/utils/logger';
+
 // Configurações de email a partir das variáveis de ambiente
 const EMAIL_CONFIG = {
   SMTP_SERVER: import.meta.env.VITE_SMTP_SERVER || 'smtp.gmail.com',
@@ -15,9 +17,9 @@ class EmailService {
     this.useRealEmail = !!(EMAIL_CONFIG.SMTP_USERNAME && EMAIL_CONFIG.SMTP_PASSWORD && EMAIL_CONFIG.FROM_EMAIL);
     
     if (this.useRealEmail) {
-      console.log('📧 EmailService configurado para usar Gmail:', EMAIL_CONFIG.FROM_EMAIL);
+      emailLog('EmailService configurado para usar Gmail', { from: EMAIL_CONFIG.FROM_EMAIL });
     } else {
-      console.log('📧 EmailService em modo MOCK - configure as variáveis de ambiente');
+      emailLog('EmailService em modo MOCK - configure as variáveis de ambiente');
     }
   }
 
@@ -36,8 +38,8 @@ class EmailService {
       } else {
         return await this.sendViaMock(to, subject, message);
       }
-    } catch (error) {
-      console.error(`❌ Erro ao enviar email para ${to}:`, error);
+    } catch (err) {
+      error(`[MOCK] Erro ao simular email`, err, 'EmailService');
       return false;
     }
   }
@@ -61,7 +63,7 @@ class EmailService {
    */
   private async sendViaBackend(to: string, subject: string, message: string): Promise<boolean> {
     try {
-      console.log(`📧 Enviando email via Backend para: ${to}`);
+      emailLog(`Enviando email via Backend`, { to, subject });
       
       const response = await fetch('/api/send-email', {
         method: 'POST',
@@ -78,16 +80,16 @@ class EmailService {
 
       if (response.ok) {
         const result = await response.json();
-        console.log(`✅ Email enviado com sucesso para ${to}`);
+        emailLog(`Email enviado com sucesso`, { to });
         return true;
       } else {
-        const error = await response.text();
-        console.error(`❌ Erro do backend:`, error);
+        const errorText = await response.text();
+        error(`Erro do backend ao enviar email`, errorText, 'EmailService');
         // Em caso de erro, usar modo mock para não quebrar o fluxo
         return await this.sendViaMock(to, subject, message);
       }
-    } catch (error) {
-      console.error(`❌ Erro ao conectar com backend:`, error);
+    } catch (err) {
+      error(`Erro ao conectar com backend`, err, 'EmailService');
       // Em caso de erro, usar modo mock
       return await this.sendViaMock(to, subject, message);
     }
@@ -101,21 +103,17 @@ class EmailService {
       // Simular delay de rede
       await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
       
-      // Log bem visível
-      console.log('\n' + '='.repeat(80));
-      console.log('📧 EMAIL ENVIADO (MODO SIMULAÇÃO)');
-      console.log('='.repeat(80));
-      console.log(`🔴 DE: ${EMAIL_CONFIG.FROM_EMAIL || 'Sistema Easy Arrange'}`);
-      console.log(`🎯 PARA: ${to}`);
-      console.log(`📄 ASSUNTO: ${subject}`);
-      console.log(`📝 MENSAGEM:`);
-      console.log(message);
-      console.log('='.repeat(80) + '\n');
+      emailLog('EMAIL ENVIADO (MODO SIMULAÇÃO)', {
+        from: EMAIL_CONFIG.FROM_EMAIL || 'Sistema Mavic',
+        to,
+        subject,
+        message
+      });
       
       // Simular sucesso sempre
       return true;
-    } catch (error) {
-      console.error(`❌ [MOCK] Erro ao simular email para ${to}:`, error);
+    } catch (err) {
+      error(`Erro ao enviar email para ${to}`, err, 'EmailService');
       return false;
     }
   }
@@ -125,10 +123,10 @@ class EmailService {
    */
   async verifyConnection(): Promise<boolean> {
     if (this.useRealEmail) {
-      console.log('✅ Credenciais Gmail configuradas:', EMAIL_CONFIG.FROM_EMAIL);
+      emailLog('Credenciais Gmail configuradas', { from: EMAIL_CONFIG.FROM_EMAIL });
       return true;
     } else {
-      console.log('ℹ️ Modo mock ativo - configure VITE_SMTP_USERNAME, VITE_SMTP_PASSWORD, VITE_FROM_EMAIL');
+      emailLog('Modo mock ativo - configure VITE_SMTP_USERNAME, VITE_SMTP_PASSWORD, VITE_FROM_EMAIL');
       return true; // Mock sempre "funciona"
     }
   }
@@ -138,7 +136,7 @@ class EmailService {
    */
   forceRealEmails() {
     this.useRealEmail = true;
-    console.log('🚀 Modo de emails reais forçado');
+    emailLog('Modo de emails reais forçado');
   }
 
   /**

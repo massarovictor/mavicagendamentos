@@ -33,7 +33,7 @@ ${data.observacoes ? `💬 Observações: ${data.observacoes}` : ''}
 
 Acesse o sistema para aprovar ou rejeitar esta solicitação.
 
-Sistema Easy Arrange
+Sistema Mavic
     `.trim();
     
     return { subject, message };
@@ -57,7 +57,7 @@ ${data.observacoes ? `💬 Suas observações: ${data.observacoes}` : ''}
 
 Anote esta data em sua agenda e compareça no horário marcado.
 
-Sistema Easy Arrange
+Sistema Mavic
     `.trim();
     
     return { subject, message };
@@ -86,7 +86,7 @@ Possíveis motivos:
 
 Você pode tentar agendar outros horários disponíveis.
 
-Sistema Easy Arrange
+Sistema Mavic
     `.trim();
     
     return { subject, message };

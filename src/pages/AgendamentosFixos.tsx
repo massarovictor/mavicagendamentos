@@ -384,11 +384,39 @@ const AgendamentosFixos = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="aulaInicio">Aula de Início *</Label>
-                  <Select value={formData.aulaInicio} onValueChange={(value) => setFormData(prev => ({...prev, aulaInicio: value}))}><SelectTrigger><SelectValue placeholder="Selecione a aula" /></SelectTrigger><SelectContent>{Object.entries(AULAS_HORARIOS).map(([aula, horario]) => (<SelectItem key={aula} value={aula}>{aula}ª aula ({horario.inicio} - {horario.fim})</SelectItem>))}</SelectContent></Select>
+                  <Select 
+                    value={formData.aulaInicio} 
+                    onValueChange={(value) => setFormData(prev => ({...prev, aulaInicio: value}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a aula" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(AULAS_HORARIOS).map(([aula, horario]) => (
+                        <SelectItem key={aula} value={aula}>
+                          {aula}ª aula ({horario.inicio} - {horario.fim})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="aulaFim">Aula de Fim *</Label>
-                  <Select value={formData.aulaFim} onValueChange={(value) => setFormData(prev => ({...prev, aulaFim: value}))}><SelectTrigger><SelectValue placeholder="Selecione a aula" /></SelectTrigger><SelectContent>{Object.entries(AULAS_HORARIOS).map(([aula, horario]) => (<SelectItem key={aula} value={aula}>{aula}ª aula ({horario.inicio} - {horario.fim})</SelectItem>))}</SelectContent></Select>
+                  <Select 
+                    value={formData.aulaFim} 
+                    onValueChange={(value) => setFormData(prev => ({...prev, aulaFim: value}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a aula" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(AULAS_HORARIOS).map(([aula, horario]) => (
+                        <SelectItem key={aula} value={aula}>
+                          {aula}ª aula ({horario.inicio} - {horario.fim})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="space-y-2">

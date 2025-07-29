@@ -154,7 +154,6 @@ export const useSupabaseData = () => {
       });
 
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
       setState(prev => ({
         ...prev,
         loading: false,
@@ -176,7 +175,6 @@ export const useSupabaseData = () => {
       await loadData(); // Recarregar dados
       return true;
     } catch (error) {
-      console.error('Erro ao adicionar usuário:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar usuário' }));
       return false;
     }
@@ -188,15 +186,6 @@ export const useSupabaseData = () => {
       if (!userUuid) throw new Error('UUID do usuário não encontrado');
 
       // Log detalhado para debug
-      console.log('🔧 Atualizando usuário:', {
-        nome: usuario.nome,
-        tipo: usuario.tipo,
-        espacosOriginais: usuario.espacos,
-        espacosTipo: typeof usuario.espacos,
-        espacosLength: usuario.espacos?.length,
-        userUuid
-      });
-
       const dadosParaAtualizar = {
         nome: usuario.nome,
         email: usuario.email,
@@ -207,8 +196,6 @@ export const useSupabaseData = () => {
         senha: usuario.senha ? usuario.senha : null, // Não enviar senha se não for atualizada
       };
 
-      console.log('📤 Dados sendo enviados para Supabase:', dadosParaAtualizar);
-
       const { data, error } = await supabase
         .from('usuarios')
         .update(dadosParaAtualizar)
@@ -216,16 +203,12 @@ export const useSupabaseData = () => {
         .select(); // Retornar os dados atualizados
 
       if (error) {
-        console.error('❌ Erro detalhado do Supabase:', error);
         throw error;
       }
-
-      console.log('✅ Usuário atualizado com sucesso:', data);
 
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar usuário:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar usuário' }));
       return false;
     }
@@ -246,7 +229,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao deletar usuário:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar usuário' }));
       return false;
     }
@@ -263,7 +245,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao adicionar espaço:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar espaço' }));
       return false;
     }
@@ -287,7 +268,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar espaço:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar espaço' }));
       return false;
     }
@@ -305,7 +285,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao deletar espaço:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar espaço' }));
       return false;
     }
@@ -321,8 +300,6 @@ export const useSupabaseData = () => {
       const espaco = state.espacos.find(e => e.id === agendamento.espacoId);
       const todosUsuarios = [...state.usuarios]; // Cópia dos usuários atuais
 
-      console.log('🔄 Criando agendamento:', { agendamento, usuario: usuario?.nome, espaco: espaco?.nome });
-
       const { error } = await supabase
         .from('agendamentos')
         .insert(convertToAgendamentoInsert(agendamento, userUuid));
@@ -334,23 +311,17 @@ export const useSupabaseData = () => {
       // Enviar notificação por email para gestores após criação bem-sucedida
       try {
         if (usuario && espaco) {
-          console.log('📧 Enviando notificação para gestores...');
           const resultado = await NotificationService.notificarTodosGestores(agendamento, usuario, espaco, todosUsuarios);
-          console.log('📧 Resultado da notificação:', resultado);
+          // Notificação enviada com sucesso
         } else {
-          console.warn('⚠️ Não foi possível enviar notificação: dados incompletos', { 
-            usuario: !!usuario, 
-            espaco: !!espaco 
-          });
+          // Dados insuficientes para notificação
         }
       } catch (emailError) {
-        console.warn('⚠️ Falha ao enviar notificação por email:', emailError);
         // Não falha a operação se o email falhar
       }
 
       return true;
     } catch (error) {
-      console.error('❌ Erro ao adicionar agendamento:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar agendamento' }));
       return false;
     }
@@ -388,14 +359,12 @@ export const useSupabaseData = () => {
             }
           }
         } catch (emailError) {
-          console.warn('Aviso: Falha ao enviar notificação por email:', emailError);
           // Não falha a operação se o email falhar
         }
       }
 
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar status do agendamento:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar agendamento' }));
       return false;
     }
@@ -425,7 +394,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar agendamento:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar agendamento' }));
       return false;
     }
@@ -443,7 +411,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao deletar agendamento:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar agendamento' }));
       return false;
     }
@@ -474,7 +441,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao adicionar agendamento fixo:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar agendamento fixo' }));
       return false;
     }
@@ -505,7 +471,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar agendamento fixo:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar agendamento fixo' }));
       return false;
     }
@@ -523,7 +488,6 @@ export const useSupabaseData = () => {
       await loadData();
       return true;
     } catch (error) {
-      console.error('Erro ao deletar agendamento fixo:', error);
       setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar agendamento fixo' }));
       return false;
     }

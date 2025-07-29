@@ -138,9 +138,13 @@ const AprovarAgendamentos = () => {
     : agendamentosMeusEspacos.filter(a => a.status === filtroStatus);
 
   const counts = {
+    todos: agendamentosMeusEspacos.length,
     total: agendamentosMeusEspacos.length,
+    pendente: agendamentosMeusEspacos.filter(a => a.status === 'pendente').length,
     pendentes: agendamentosMeusEspacos.filter(a => a.status === 'pendente').length,
+    aprovado: agendamentosMeusEspacos.filter(a => a.status === 'aprovado').length,
     aprovados: agendamentosMeusEspacos.filter(a => a.status === 'aprovado').length,
+    rejeitado: agendamentosMeusEspacos.filter(a => a.status === 'rejeitado').length,
     rejeitados: agendamentosMeusEspacos.filter(a => a.status === 'rejeitado').length,
     conflitos: Object.keys(conflictGroups).length
   };

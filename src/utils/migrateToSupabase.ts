@@ -57,7 +57,6 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     }
 
     // 3. Migrar usuários
-    console.log('Migrando usuários...');
     const usuariosMigrated = await migrateUsuarios(localData.usuarios);
     result.migrated.usuarios = usuariosMigrated.success;
     if (usuariosMigrated.errors.length > 0) {
@@ -65,7 +64,6 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     }
 
     // 4. Migrar espaços
-    console.log('Migrando espaços...');
     const espacosMigrated = await migrateEspacos(localData.espacos);
     result.migrated.espacos = espacosMigrated.success;
     if (espacosMigrated.errors.length > 0) {
@@ -73,7 +71,6 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     }
 
     // 5. Migrar agendamentos (após usuários e espaços)
-    console.log('Migrando agendamentos...');
     const agendamentosMigrated = await migrateAgendamentos(localData.agendamentos);
     result.migrated.agendamentos = agendamentosMigrated.success;
     if (agendamentosMigrated.errors.length > 0) {
@@ -81,7 +78,6 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     }
 
     // 6. Migrar agendamentos fixos
-    console.log('Migrando agendamentos fixos...');
     const agendamentosFixosMigrated = await migrateAgendamentosFixos(localData.agendamentosFixos);
     result.migrated.agendamentosFixos = agendamentosFixosMigrated.success;
     if (agendamentosFixosMigrated.errors.length > 0) {
@@ -99,7 +95,6 @@ export const migrateLocalStorageToSupabase = async (): Promise<MigrationResult> 
     return result;
 
   } catch (error) {
-    console.error('Erro durante a migração:', error);
     result.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
     result.message = 'Falha na migração';
     return result;
@@ -124,7 +119,6 @@ const getLocalStorageData = (): LocalStorageData | null => {
       agendamentosFixos: agendamentosFixos ? JSON.parse(agendamentosFixos) : [],
     };
   } catch (error) {
-    console.error('Erro ao ler dados do localStorage:', error);
     return null;
   }
 };
@@ -137,7 +131,6 @@ const checkExistingData = async (): Promise<{ hasData: boolean }> => {
 
     return { hasData: (count || 0) > 0 };
   } catch (error) {
-    console.error('Erro ao verificar dados existentes:', error);
     return { hasData: false };
   }
 };
@@ -285,10 +278,8 @@ const createLocalStorageBackup = async (data: LocalStorageData): Promise<void> =
     };
 
     localStorage.setItem('migration_backup', JSON.stringify(backup));
-    console.log('Backup do localStorage criado com sucesso');
-  } catch (error) {
-    console.error('Erro ao criar backup:', error);
-  }
+    } catch (error) {
+    }
 };
 
 // Função para reverter migração (se necessário)

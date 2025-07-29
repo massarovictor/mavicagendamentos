@@ -41,7 +41,6 @@ export const useSupabaseAuth = () => {
         telefone: data.telefone || undefined,
       };
     } catch (error) {
-      console.error('Erro ao converter usuário:', error);
       return null;
     }
   }, []);
@@ -74,7 +73,6 @@ export const useSupabaseAuth = () => {
         });
       }
     } catch (error) {
-      console.error('Erro ao verificar sessão:', error);
       setAuthState(prev => ({
         ...prev,
         loading: false,
@@ -118,7 +116,6 @@ export const useSupabaseAuth = () => {
       }
       return false;
     } catch (error) {
-      console.error('Erro no login:', error);
       setAuthState(prev => ({
         ...prev,
         loading: false,
@@ -178,7 +175,6 @@ export const useSupabaseAuth = () => {
         return false;
       }
     } catch (error) {
-      console.error('Erro no login:', error);
       setAuthState(prev => ({
         ...prev,
         loading: false,
@@ -205,8 +201,7 @@ export const useSupabaseAuth = () => {
         error: null,
       });
     } catch (error) {
-      console.error('Erro no logout:', error);
-    }
+      }
   }, []);
 
   // Registrar novo usuário
@@ -242,7 +237,6 @@ export const useSupabaseAuth = () => {
       }
       return false;
     } catch (error) {
-      console.error('Erro no registro:', error);
       setAuthState(prev => ({
         ...prev,
         loading: false,

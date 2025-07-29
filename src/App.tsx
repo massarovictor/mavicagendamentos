@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,8 +18,13 @@ import MeusEspacos from "./pages/MeusEspacos";
 import AprovarAgendamentos from "./pages/AprovarAgendamentos";
 import EspacosDisponiveis from "./pages/EspacosDisponiveis";
 import AgendamentosFixos from "./pages/AgendamentosFixos";
-import Debug from "./pages/Debug";
-import TesteNotificacaoCompleto from "./pages/TesteNotificacaoCompleto";
+
+// Páginas de debug/teste - importação condicional
+const isDevelopment = import.meta.env.DEV;
+
+// Componentes condicionais para debug
+const DebugComponent = isDevelopment ? React.lazy(() => import("./pages/Debug")) : null;
+const TesteNotificacaoComponent = isDevelopment ? React.lazy(() => import("./pages/TesteNotificacaoCompleto")) : null;
 
 const queryClient = new QueryClient();
 
@@ -116,22 +122,31 @@ const AppRoutes = () => {
           </ProtectedRoute>
         } 
       />
-      <Route 
-        path="/debug" 
-        element={
-          <ProtectedRoute>
-            <Debug />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/teste-notificacao" 
-        element={
-          <ProtectedRoute>
-            <TesteNotificacaoCompleto />
-          </ProtectedRoute>
-        } 
-      />
+      {/* Rotas de debug (apenas em desenvolvimento) */}
+      {isDevelopment && DebugComponent && (
+        <Route 
+          path="/debug" 
+          element={
+            <ProtectedRoute>
+              <React.Suspense fallback={<div>Carregando...</div>}>
+                <DebugComponent />
+              </React.Suspense>
+            </ProtectedRoute>
+          } 
+        />
+      )}
+      {isDevelopment && TesteNotificacaoComponent && (
+        <Route 
+          path="/teste-notificacao" 
+          element={
+            <ProtectedRoute>
+              <React.Suspense fallback={<div>Carregando...</div>}>
+                <TesteNotificacaoComponent />
+              </React.Suspense>
+            </ProtectedRoute>
+          } 
+        />
+      )}
       <Route 
         path="/" 
         element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />} 

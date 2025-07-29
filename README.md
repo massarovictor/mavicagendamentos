@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# Mavic - Sistema de Agendamento de Espaços
 
-## Project info
+Sistema desenvolvido para gerenciamento e agendamento de espaços educacionais, permitindo controle de usuários, gestores e administradores.
 
-**URL**: https://lovable.dev/projects/3719f3fb-e98b-4858-9632-8267f82d899a
+## 🎯 Funcionalidades
 
-## How can I edit this code?
+- **Gestão de Usuários**: Administradores, gestores e usuários comuns
+- **Agendamento de Espaços**: Sistema completo de reservas
+- **Notificações por Email**: Sistema automático de notificações
+- **Dashboard Personalizado**: Interface específica para cada tipo de usuário
+- **Aprovação de Agendamentos**: Fluxo de aprovação pelos gestores
+- **Agendamentos Fixos**: Reservas recorrentes
 
-There are several ways of editing your application.
+## 🚀 Tecnologias
 
-**Use Lovable**
+- **Frontend**: React, TypeScript, Vite
+- **UI**: Tailwind CSS, shadcn/ui
+- **Backend**: Supabase (PostgreSQL)
+- **Email**: Nodemailer
+- **Deploy**: Vercel
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3719f3fb-e98b-4858-9632-8267f82d899a) and start prompting.
+## 📦 Instalação
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# Clone o repositório
+git clone <repository-url>
 
-**Use your preferred IDE**
+# Instale as dependências
+npm install
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# Configure as variáveis de ambiente
+cp env.example .env
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Execute em modo desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Configuração
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. Configure o Supabase:
+   - Crie um projeto no [Supabase](https://supabase.com)
+   - Execute as migrations em `supabase/migrations/`
+   - Configure as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`
 
-**Use GitHub Codespaces**
+2. Configure o email:
+   - Configure as variáveis SMTP no `.env`
+   - Para desenvolvimento, use `npm run email-server`
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🧪 Testes
 
-## What technologies are used for this project?
+```bash
+# Executar testes
+npm run test
 
-This project is built with:
+# Build de produção
+npm run build
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Limpeza de logs
+npm run clean-logs
+```
 
-## How can I deploy this project?
+## 📱 Uso
 
-Simply open [Lovable](https://lovable.dev/projects/3719f3fb-e98b-4858-9632-8267f82d899a) and click on Share -> Publish.
+1. **Login**: Acesse com usuário cadastrado no sistema
+2. **Dashboard**: Interface personalizada por tipo de usuário
+3. **Agendamentos**: Solicite reservas de espaços
+4. **Aprovação**: Gestores aprovam/rejeitam solicitações
+5. **Notificações**: Receba emails sobre status dos agendamentos
 
-## Can I connect a custom domain to my Lovable project?
+## 🔐 Tipos de Usuário
 
-Yes, you can!
+- **Admin**: Acesso total ao sistema
+- **Gestor**: Gerencia espaços específicos
+- **Usuário**: Solicita agendamentos
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📞 Suporte
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Sistema desenvolvido por Massaro Victor.
+
+---
+
+**Mavic** - Sistema profissional de agendamento de espaços educacionais.

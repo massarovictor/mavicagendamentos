@@ -229,13 +229,59 @@ const GerenciarEspacos = () => {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild><Button onClick={resetForm}><Plus className="h-4 w-4 mr-2" />Novo Espaço</Button></DialogTrigger>
-          <DialogContent><DialogHeader><DialogTitle>{editingEspaco ? 'Editar Espaço' : 'Novo Espaço'}</DialogTitle><DialogDescription>Preencha as informações do espaço abaixo.</DialogDescription></DialogHeader>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingEspaco ? 'Editar Espaço' : 'Novo Espaço'}</DialogTitle>
+              <DialogDescription>Preencha as informações do espaço abaixo.</DialogDescription>
+            </DialogHeader>
             <form onSubmit={form.handleSubmit} className="space-y-4 pt-4">
-              <div><Label htmlFor="nome">Nome *</Label><Input id="nome" value={form.values.nome} onChange={(e) => form.setValue('nome', e.target.value)} placeholder="Ex: Laboratório de Informática" className={form.errors.nome ? 'border-red-500' : ''}/></div>
-              <div><Label htmlFor="capacidade">Capacidade *</Label><Input id="capacidade" type="number" value={form.values.capacidade} onChange={(e) => form.setValue('capacidade', Number(e.target.value))} placeholder="Ex: 25" className={form.errors.capacidade ? 'border-red-500' : ''}/></div>
-              <div><Label htmlFor="descricao">Descrição</Label><Input id="descricao" value={form.values.descricao} onChange={(e) => form.setValue('descricao', e.target.value)} placeholder="Ex: Sala com 25 computadores"/></div>
-              <div><Label htmlFor="equipamentos">Equipamentos (separados por vírgula)</Label><Input id="equipamentos" value={equipamentosInput} onChange={(e) => setEquipamentosInput(e.target.value)} placeholder="Ex: Projetor, Ar condicionado"/></div>
-              <DialogFooter><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit" disabled={form.isSubmitting}>{form.isSubmitting ? 'Salvando...' : 'Salvar'}</Button></DialogFooter>
+              <div>
+                <Label htmlFor="nome">Nome *</Label>
+                <Input 
+                  id="nome" 
+                  value={form.values.nome} 
+                  onChange={(e) => form.setValue('nome', e.target.value)} 
+                  placeholder="Ex: Laboratório de Informática" 
+                  className={form.errors.nome ? 'border-red-500' : ''}
+                />
+              </div>
+              <div>
+                <Label htmlFor="capacidade">Capacidade *</Label>
+                <Input 
+                  id="capacidade" 
+                  type="number" 
+                  value={form.values.capacidade} 
+                  onChange={(e) => form.setValue('capacidade', Number(e.target.value))} 
+                  placeholder="Ex: 25" 
+                  className={form.errors.capacidade ? 'border-red-500' : ''}
+                />
+              </div>
+              <div>
+                <Label htmlFor="descricao">Descrição</Label>
+                <Input 
+                  id="descricao" 
+                  value={form.values.descricao} 
+                  onChange={(e) => form.setValue('descricao', e.target.value)} 
+                  placeholder="Ex: Sala com 25 computadores"
+                />
+              </div>
+              <div>
+                <Label htmlFor="equipamentos">Equipamentos (separados por vírgula)</Label>
+                <Input 
+                  id="equipamentos" 
+                  value={equipamentosInput} 
+                  onChange={(e) => setEquipamentosInput(e.target.value)} 
+                  placeholder="Ex: Projetor, Ar condicionado"
+                />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={form.isSubmitting}>
+                  {form.isSubmitting ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>

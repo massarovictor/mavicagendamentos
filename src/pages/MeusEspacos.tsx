@@ -21,8 +21,8 @@ const MeusEspacos = () => {
     const statsMap = new Map();
     meusEspacos.forEach(espaco => {
         const agendamentosEspaco = agendamentos.filter(a => a.espacoId === espaco.id);
-        const pendentes = agendamentosEspaco.filter(a => a.status === 'aprovado').length;
-        const aprovados = agendamentosEspaco.filter(a => a.status === 'pendente').length;
+        const pendentes = agendamentosEspaco.filter(a => a.status === 'pendente').length;
+        const aprovados = agendamentosEspaco.filter(a => a.status === 'aprovado').length;
         const hoje = new Date();
         const treintaDiasAtras = new Date(hoje.getTime() - (30 * 24 * 60 * 60 * 1000));
         const taxaOcupacao = agendamentosEspaco.filter(a => {

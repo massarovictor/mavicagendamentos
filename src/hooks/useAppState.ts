@@ -30,13 +30,13 @@ type AppAction =
   | { type: 'CLEAR_ERROR' }
   | { type: 'CREATE_BACKUP'; payload: string };
 
-// Dados iniciais
+// Dados iniciais (senhas devem ser configuradas no banco de dados)
 const INITIAL_DATA = {
   usuarios: [
-    { id: 1, nome: 'Administrador', tipo: 'admin' as const, email: 'admin@sistema.com', senha: 'admin123', ativo: true },
-    { id: 2, nome: 'Gestor Principal', tipo: 'gestor' as const, espacos: [1, 2], email: 'gestor@sistema.com', senha: 'gestor123', ativo: true },
-    { id: 3, nome: 'João Silva', tipo: 'usuario' as const, email: 'joao@email.com', senha: 'usuario123', ativo: true },
-    { id: 4, nome: 'Maria Santos', tipo: 'usuario' as const, email: 'maria@email.com', senha: 'usuario123', ativo: true }
+    { id: 1, nome: 'Administrador', tipo: 'admin' as const, email: 'admin@sistema.com', ativo: true },
+    { id: 2, nome: 'Gestor Principal', tipo: 'gestor' as const, espacos: [1, 2], email: 'gestor@sistema.com', ativo: true },
+    { id: 3, nome: 'João Silva', tipo: 'usuario' as const, email: 'joao@email.com', ativo: true },
+    { id: 4, nome: 'Maria Santos', tipo: 'usuario' as const, email: 'maria@email.com', ativo: true }
   ],
   espacos: [
     { id: 1, nome: 'Sala de Reunião A', capacidade: 8, descricao: 'Sala com projetor e ar condicionado', equipamentos: ['Projetor', 'TV', 'Ar condicionado'], ativo: true },
@@ -165,13 +165,11 @@ const storage = {
       // Verificar segurança dos dados
       const securityCheck = SecurityValidations.validateUserInput(parsed);
       if (!securityCheck.isValid) {
-        console.warn(`Dados potencialmente inseguros detectados em ${key}:`, securityCheck.errors);
         return null;
       }
       
       return parsed;
     } catch (error) {
-      console.error(`Erro ao ler ${key} do localStorage:`, error);
       return null;
     }
   },
@@ -181,14 +179,12 @@ const storage = {
       // Verificar segurança antes de salvar
       const securityCheck = SecurityValidations.validateUserInput(value);
       if (!securityCheck.isValid) {
-        console.error(`Tentativa de salvar dados inseguros em ${key}:`, securityCheck.errors);
         return false;
       }
       
       localStorage.setItem(key, JSON.stringify(value));
       return true;
     } catch (error) {
-      console.error(`Erro ao salvar ${key} no localStorage:`, error);
       return false;
     }
   },
@@ -217,7 +213,6 @@ const storage = {
       
       return backupKey;
     } catch (error) {
-      console.error('Erro ao criar backup:', error);
       return null;
     }
   },
@@ -235,7 +230,6 @@ const storage = {
       
       return true;
     } catch (error) {
-      console.error('Erro ao restaurar backup:', error);
       return false;
     }
   }
@@ -309,7 +303,6 @@ export const useAppState = () => {
                            storedAgendamentos && Array.isArray(storedAgendamentos);
 
         if (!hasValidData) {
-          console.log('Dados não encontrados ou inválidos, inicializando com dados padrão...');
           // Criar backup dos dados corrompidos se existirem
           if (storedUsuarios || storedEspacos || storedAgendamentos) {
             storage.backup();
@@ -342,8 +335,6 @@ export const useAppState = () => {
         const integrity = validateDataIntegrity(loadedData);
         
         if (!integrity.isValid) {
-          console.error('Corrupção de dados detectada:', integrity.errors);
-          
           // Tentar restaurar do backup mais recente
           const backupKeys = Object.keys(localStorage)
             .filter(key => key.startsWith('backup_'))
@@ -353,7 +344,6 @@ export const useAppState = () => {
           let restored = false;
           for (const backupKey of backupKeys) {
             if (storage.restore(backupKey)) {
-              console.log(`Dados restaurados do backup: ${backupKey}`);
               restored = true;
               break;
             }
@@ -361,7 +351,6 @@ export const useAppState = () => {
           
           if (!restored) {
             // Fallback para dados iniciais
-            console.log('Fallback para dados iniciais');
             localStorage.clear();
             storage.set('usuarios', INITIAL_DATA.usuarios);
             storage.set('espacos', INITIAL_DATA.espacos);
@@ -404,7 +393,6 @@ export const useAppState = () => {
         }
 
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
         dispatch({ 
           type: 'LOAD_DATA_ERROR', 
           payload: 'Erro crítico ao carregar dados' 
