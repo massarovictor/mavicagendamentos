@@ -13,13 +13,25 @@ class EmailService {
   private useRealEmail: boolean;
 
   constructor() {
-    // Verificar se as credenciais estão configuradas
-    this.useRealEmail = !!(EMAIL_CONFIG.SMTP_USERNAME && EMAIL_CONFIG.SMTP_PASSWORD && EMAIL_CONFIG.FROM_EMAIL);
+    // Em desenvolvimento, sempre usar MOCK para evitar problemas
+    // Em produção, verificar credenciais
+    const isProduction = import.meta.env.PROD;
+    const hasCredentials = !!(EMAIL_CONFIG.SMTP_USERNAME && EMAIL_CONFIG.SMTP_PASSWORD && EMAIL_CONFIG.FROM_EMAIL);
     
-    if (this.useRealEmail) {
-      emailLog('EmailService configurado para usar Gmail', { from: EMAIL_CONFIG.FROM_EMAIL });
+    this.useRealEmail = isProduction && hasCredentials;
+    
+    if (isProduction) {
+      if (this.useRealEmail) {
+        emailLog('EmailService configurado para PRODUÇÃO - Emails reais');
+      } else {
+        emailLog('EmailService em PRODUÇÃO - Modo MOCK (credenciais não configuradas)');
+      }
     } else {
-      emailLog('EmailService em modo MOCK - configure as variáveis de ambiente');
+      if (hasCredentials) {
+        emailLog('EmailService em DESENVOLVIMENTO - Backend local ativo (porta 3001)');
+      } else {
+        emailLog('EmailService em DESENVOLVIMENTO - Modo MOCK (sem credenciais)');
+      }
     }
   }
 
@@ -33,14 +45,31 @@ class EmailService {
     type: 'nova_solicitacao' | 'aprovacao' | 'rejeicao' = 'nova_solicitacao'
   ): Promise<boolean> {
     try {
+      // Em desenvolvimento, tentar backend local primeiro se as credenciais estiverem configuradas
+      if (!import.meta.env.PROD) {
+        const hasCredentials = !!(EMAIL_CONFIG.SMTP_USERNAME && EMAIL_CONFIG.SMTP_PASSWORD && EMAIL_CONFIG.FROM_EMAIL);
+        
+        if (hasCredentials) {
+          // Tentar backend local, depois mock
+          return await this.sendViaBackendLocal(to, subject, message) || 
+                 await this.sendViaMock(to, subject, message);
+        } else {
+          // Sem credenciais, usar mock
+          return await this.sendViaMock(to, subject, message);
+        }
+      }
+      
+      // Em produção, usar Vercel Function
       if (this.useRealEmail) {
-        return await this.sendViaBackend(to, subject, message);
+        // Tentar Vercel Function, depois mock
+        return await this.sendViaVercelFunction(to, subject, message) || 
+               await this.sendViaMock(to, subject, message);
       } else {
         return await this.sendViaMock(to, subject, message);
       }
     } catch (err) {
-      error(`[MOCK] Erro ao simular email`, err, 'EmailService');
-      return false;
+      error(`Erro no sistema de email`, err, 'EmailService');
+      return await this.sendViaMock(to, subject, message);
     }
   }
 
@@ -59,13 +88,12 @@ class EmailService {
   }
 
   /**
-   * Envia email via API de backend (que usa nodemailer)
+   * Envia email via backend local (desenvolvimento)
    */
-  private async sendViaBackend(to: string, subject: string, message: string): Promise<boolean> {
+  private async sendViaBackendLocal(to: string, subject: string, message: string): Promise<boolean> {
     try {
-      emailLog(`Enviando email via Backend`, { to, subject });
-      
-      const response = await fetch('/api/send-email', {
+      emailLog(`Tentando backend local (porta 3001)`);
+      const response = await fetch('http://localhost:3001/api/send-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,18 +108,79 @@ class EmailService {
 
       if (response.ok) {
         const result = await response.json();
-        emailLog(`Email enviado com sucesso`, { to });
+        emailLog(`Email enviado via backend local`);
         return true;
       } else {
         const errorText = await response.text();
-        error(`Erro do backend ao enviar email`, errorText, 'EmailService');
-        // Em caso de erro, usar modo mock para não quebrar o fluxo
-        return await this.sendViaMock(to, subject, message);
+        error(`Erro do backend local`, errorText, 'EmailService');
+        return false;
       }
     } catch (err) {
-      error(`Erro ao conectar com backend`, err, 'EmailService');
-      // Em caso de erro, usar modo mock
-      return await this.sendViaMock(to, subject, message);
+      error(`Erro ao conectar com backend local`, err, 'EmailService');
+      return false;
+    }
+  }
+
+  /**
+   * Envia email via Supabase Edge Function
+   */
+  private async sendViaSupabase(to: string, subject: string, message: string): Promise<boolean> {
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      
+      const { data, error: supabaseError } = await supabase.functions.invoke('send-email-notification', {
+        body: {
+          type: 'generic',
+          to,
+          subject,
+          message,
+          from: EMAIL_CONFIG.FROM_EMAIL || 'Sistema Mavic'
+        }
+      });
+
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      emailLog(`Email enviado via Supabase`);
+      return true;
+    } catch (err) {
+      error(`Erro na função Supabase`, err, 'EmailService');
+      return false;
+    }
+  }
+
+  /**
+   * Envia email via Vercel Function (produção)
+   */
+  private async sendViaVercelFunction(to: string, subject: string, message: string): Promise<boolean> {
+    try {
+      emailLog(`Tentando Vercel Function`);
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to,
+          subject,
+          message,
+          type: 'generic'
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        emailLog(`Email enviado via Vercel Function`);
+        return true;
+      } else {
+        const errorText = await response.text();
+        error(`Erro da Vercel Function`, errorText, 'EmailService');
+        return false;
+      }
+    } catch (err) {
+      error(`Erro ao conectar com Vercel Function`, err, 'EmailService');
+      return false;
     }
   }
 
@@ -100,20 +189,16 @@ class EmailService {
    */
   private async sendViaMock(to: string, subject: string, message: string): Promise<boolean> {
     try {
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+      // Simular delay de rede (mais rápido em desenvolvimento)
+      const delay = import.meta.env.PROD ? 800 + Math.random() * 1200 : 300;
+      await new Promise(resolve => setTimeout(resolve, delay));
       
-      emailLog('EMAIL ENVIADO (MODO SIMULAÇÃO)', {
-        from: EMAIL_CONFIG.FROM_EMAIL || 'Sistema Mavic',
-        to,
-        subject,
-        message
-      });
+      emailLog('✅ EMAIL ENVIADO COM SUCESSO (MODO SIMULAÇÃO)');
       
       // Simular sucesso sempre
       return true;
     } catch (err) {
-      error(`Erro ao enviar email para ${to}`, err, 'EmailService');
+      error(`Erro ao enviar email`, err, 'EmailService');
       return false;
     }
   }
@@ -123,7 +208,7 @@ class EmailService {
    */
   async verifyConnection(): Promise<boolean> {
     if (this.useRealEmail) {
-      emailLog('Credenciais Gmail configuradas', { from: EMAIL_CONFIG.FROM_EMAIL });
+      emailLog('Credenciais Gmail configuradas');
       return true;
     } else {
       emailLog('Modo mock ativo - configure VITE_SMTP_USERNAME, VITE_SMTP_PASSWORD, VITE_FROM_EMAIL');

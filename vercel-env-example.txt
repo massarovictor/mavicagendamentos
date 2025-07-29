@@ -1,0 +1,16 @@
+# Variáveis de ambiente que devem ser configuradas na Vercel:
+
+# Supabase
+VITE_SUPABASE_URL=https://nlyjilwnxutnmrxcwzhg.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5seWppbHdueHV0bm1yeGN3emhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE1NzQ3MDEsImV4cCI6MjA2NzE1MDcwMX0.TQo1EEvCqQVewy8Fk7scwJCCO4UJRenpKH5RnvL8f-E
+
+# Email (Gmail)
+VITE_SMTP_SERVER=smtp.gmail.com
+VITE_SMTP_PORT=587
+VITE_SMTP_USERNAME=epmariacelia@gmail.com
+VITE_SMTP_PASSWORD=vkxe xujp cnbx jydx
+VITE_FROM_EMAIL=epmariacelia@gmail.com
+
+# IMPORTANTE: 
+# 1. Configure essas variáveis no painel da Vercel em Settings > Environment Variables
+# 2. A função Supabase também precisa dessas variáveis configuradas no Supabase Dashboard 

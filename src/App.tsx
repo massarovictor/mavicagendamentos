@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { useRouteHistory } from "@/hooks/useRouteHistory";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Layout from "./components/Layout";
@@ -29,18 +30,40 @@ const TesteNotificacaoComponent = isDevelopment ? React.lazy(() => import("./pag
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div>Carregando...</div>
+      </div>
+    );
+  }
+  
   return isLoggedIn ? <Layout>{children}</Layout> : <Navigate to="/login" />;
 };
 
+// Componente para redirecionamento após login
+const LoginRedirect = () => {
+  return <Navigate to="/dashboard" replace />;
+};
+
 const AppRoutes = () => {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div>Carregando sistema...</div>
+      </div>
+    );
+  }
 
   return (
     <Routes>
       <Route 
         path="/login" 
-        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Login />} 
+        element={isLoggedIn ? <LoginRedirect /> : <Login />} 
       />
       <Route 
         path="/dashboard" 
@@ -149,11 +172,11 @@ const AppRoutes = () => {
       )}
       <Route 
         path="/" 
-        element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />} 
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
       />
       <Route 
         path="*" 
-        element={<Navigate to={isLoggedIn ? "/dashboard" : "/login"} />} 
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
       />
     </Routes>
   );

@@ -4,6 +4,7 @@ import { Usuario, AuthState } from '@/types';
 interface AuthContextType extends AuthState {
   login: (usuario: Usuario) => void;
   logout: () => void;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     usuario: null,
     isLoggedIn: false
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('currentUser');
@@ -31,6 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setAuthState({ usuario, isLoggedIn: true });
     }
+    setIsLoading(false);
   }, []);
 
   const login = (usuario: Usuario) => {
@@ -43,11 +46,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('mavic_last_route'); // Limpar histórico de rotas no logout
     setAuthState({ usuario: null, isLoggedIn: false });
   };
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,13 +4,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface EmailRequest {
   to: string;
   subject: string;
-  html: string;
-  type: 'nova_solicitacao' | 'aprovacao' | 'rejeicao';
+  html?: string;
+  message?: string;
+  type: 'nova_solicitacao' | 'aprovacao' | 'rejeicao' | 'generic';
+  from?: string;
 }
 
 serve(async (req) => {
@@ -24,19 +27,21 @@ serve(async (req) => {
       throw new Error('Método não permitido');
     }
 
-    const { to, subject, html, type }: EmailRequest = await req.json();
+    const { to, subject, html, message, type, from }: EmailRequest = await req.json();
 
-    if (!to || !subject || !html) {
-      throw new Error('Parâmetros obrigatórios: to, subject, html');
+    if (!to || !subject || (!html && !message)) {
+      throw new Error('Parâmetros obrigatórios: to, subject, html ou message');
     }
+
+    const emailContent = html || message || '';
 
     // Configurações do email a partir das variáveis de ambiente
     const SMTP_CONFIG = {
-      server: Deno.env.get('SMTP_SERVER') || 'smtp.gmail.com',
-      port: parseInt(Deno.env.get('SMTP_PORT') || '587'),
-      username: Deno.env.get('SMTP_USERNAME') || '',
-      password: Deno.env.get('SMTP_PASSWORD') || '',
-      from_email: Deno.env.get('FROM_EMAIL') || '',
+      server: Deno.env.get('VITE_SMTP_SERVER') || 'smtp.gmail.com',
+      port: parseInt(Deno.env.get('VITE_SMTP_PORT') || '587'),
+      username: Deno.env.get('VITE_SMTP_USERNAME') || '',
+      password: Deno.env.get('VITE_SMTP_PASSWORD') || '',
+      from_email: Deno.env.get('VITE_FROM_EMAIL') || '',
       from_name: 'Sistema Mavic'
     };
 
@@ -52,12 +57,12 @@ serve(async (req) => {
     console.log(`📧 Para: ${to}`);
     console.log(`📧 Assunto: ${subject}`);
 
-    // Simular envio por agora (substitua por implementação real)
+    // Enviar email
     const emailSent = await sendEmailViaAPI({
       to,
       subject,
-      html,
-      from: `${SMTP_CONFIG.from_name} <${SMTP_CONFIG.from_email}>`,
+      html: emailContent,
+      from: from || `${SMTP_CONFIG.from_name} <${SMTP_CONFIG.from_email}>`,
     });
 
     if (emailSent) {

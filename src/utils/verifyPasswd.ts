@@ -1,16 +1,14 @@
-import bcrypt from 'bcryptjs';
-
-export const verifyPasswd = (input: string, storedHash: string): boolean => {
+export const verifyPasswd = (input: string, storedPassword: string): boolean => {
   // Check if the input is empty
   if (!input) {
     return false;
   }
 
-    // Check if the stored hash is empty
-    if (!storedHash) {
-      return false;
-    }
+  // Check if the stored password is empty
+  if (!storedPassword) {
+    return false;
+  }
 
-  // Compare the input with the stored hash
-  return bcrypt.compareSync(input, storedHash);
+  // Simple comparison (sistema mantém senhas simples conforme solicitado)
+  return input === storedPassword;
 }

@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Footer from '@/components/ui/footer';
 import { AppSidebar } from './AppSidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useRouteHistory } from '@/hooks/useRouteHistory';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface LayoutProps {
@@ -12,6 +13,9 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { usuario, logout } = useAuth();
+  
+  // Hook para registrar histórico de rotas automaticamente
+  useRouteHistory();
 
   const getUserTypeColor = () => {
     switch (usuario?.tipo) {
