@@ -14,18 +14,15 @@ class EmailService {
 
   constructor() {
     // Em desenvolvimento, sempre usar MOCK para evitar problemas
-    // Em produção, verificar credenciais
+    // Em produção, sempre tentar emails reais (Vercel Function vai validar credenciais)
     const isProduction = import.meta.env.PROD;
     const hasCredentials = !!(EMAIL_CONFIG.SMTP_USERNAME && EMAIL_CONFIG.SMTP_PASSWORD && EMAIL_CONFIG.FROM_EMAIL);
     
-    this.useRealEmail = isProduction && hasCredentials;
+    // Em produção, sempre tentar envio real (a Vercel Function fará a validação)
+    this.useRealEmail = isProduction;
     
     if (isProduction) {
-      if (this.useRealEmail) {
-        emailLog('EmailService configurado para PRODUÇÃO - Emails reais');
-      } else {
-        emailLog('EmailService em PRODUÇÃO - Modo MOCK (credenciais não configuradas)');
-      }
+      emailLog('EmailService configurado para PRODUÇÃO - Vercel Function');
     } else {
       if (hasCredentials) {
         emailLog('EmailService em DESENVOLVIMENTO - Backend local ativo (porta 3001)');
@@ -121,34 +118,7 @@ class EmailService {
     }
   }
 
-  /**
-   * Envia email via Supabase Edge Function
-   */
-  private async sendViaSupabase(to: string, subject: string, message: string): Promise<boolean> {
-    try {
-      const { supabase } = await import('@/lib/supabase');
-      
-      const { data, error: supabaseError } = await supabase.functions.invoke('send-email-notification', {
-        body: {
-          type: 'generic',
-          to,
-          subject,
-          message,
-          from: EMAIL_CONFIG.FROM_EMAIL || 'Sistema Mavic'
-        }
-      });
 
-      if (supabaseError) {
-        throw supabaseError;
-      }
-
-      emailLog(`Email enviado via Supabase`);
-      return true;
-    } catch (err) {
-      error(`Erro na função Supabase`, err, 'EmailService');
-      return false;
-    }
-  }
 
   /**
    * Envia email via Vercel Function (produção)

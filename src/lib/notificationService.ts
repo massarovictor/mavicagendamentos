@@ -33,12 +33,12 @@ export class NotificationService {
       if (sucesso) {
         notificationLog('📧 Email enviado para gestor');
       } else {
-        console.error(`❌ Falha ao enviar notificação para gestor: ${gestor.email}`);
+        notificationLog('❌ Falha ao enviar notificação para gestor');
       }
       
       return sucesso;
     } catch (error) {
-      console.error('Erro ao notificar gestor sobre nova solicitação:', error);
+      notificationLog('❌ Erro ao notificar gestor sobre nova solicitação');
       return false;
     }
   }
@@ -72,12 +72,12 @@ export class NotificationService {
       if (sucesso) {
         notificationLog('Notificação de aprovação enviada');
       } else {
-        console.error(`❌ Falha ao enviar notificação de aprovação para: ${usuario.email}`);
+        notificationLog('❌ Falha ao enviar notificação de aprovação');
       }
       
       return sucesso;
     } catch (error) {
-      console.error('Erro ao notificar usuário sobre aprovação:', error);
+      notificationLog('❌ Erro ao notificar usuário sobre aprovação');
       return false;
     }
   }
@@ -111,12 +111,12 @@ export class NotificationService {
       if (sucesso) {
         notificationLog('Notificação de rejeição enviada');
       } else {
-        console.error(`❌ Falha ao enviar notificação de rejeição para: ${usuario.email}`);
+        notificationLog('❌ Falha ao enviar notificação de rejeição');
       }
       
       return sucesso;
     } catch (error) {
-      console.error('Erro ao notificar usuário sobre rejeição:', error);
+      notificationLog('❌ Erro ao notificar usuário sobre rejeição');
       return false;
     }
   }
