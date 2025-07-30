@@ -88,14 +88,41 @@ const AgendamentosFixos = () => {
       return;
     }
 
+    // Validação de conflito de agendamento fixo
+    const espacoId = Number(formData.espacoId);
+    const aulaInicio = Number(formData.aulaInicio);
+    const aulaFim = Number(formData.aulaFim);
+    const dataInicio = new Date(formData.dataInicio);
+    const dataFim = new Date(formData.dataFim);
+
+    const conflito = agendamentosFixos.some(af => {
+      if (af.espacoId !== espacoId) return false;
+      if (editingAgendamento && af.id === editingAgendamento.id) return false;
+      // Interseção de dias da semana
+      const diasEmComum = af.diasSemana.some(dia => formData.diasSemana.includes(dia));
+      if (!diasEmComum) return false;
+      // Interseção de datas
+      const afDataInicio = new Date(af.dataInicio);
+      const afDataFim = new Date(af.dataFim);
+      const datasSobrepoem = dataInicio <= afDataFim && dataFim >= afDataInicio;
+      if (!datasSobrepoem) return false;
+      // Interseção de aulas
+      return aulaInicio <= af.aulaFim && aulaFim >= af.aulaInicio;
+    });
+
+    if (conflito) {
+      notifications.error("Conflito de Horário", "Já existe um agendamento fixo para este espaço, dia da semana e horário.");
+      return;
+    }
+
     const novoAgendamentoFixo: AgendamentoFixo = {
       id: editingAgendamento?.id || Date.now(),
-      espacoId: Number(formData.espacoId),
+      espacoId: espacoId,
       usuarioId: usuario!.id,
       dataInicio: formData.dataInicio,
       dataFim: formData.dataFim,
-      aulaInicio: Number(formData.aulaInicio) as NumeroAula,
-      aulaFim: Number(formData.aulaFim) as NumeroAula,
+      aulaInicio: aulaInicio as NumeroAula,
+      aulaFim: aulaFim as NumeroAula,
       diasSemana: formData.diasSemana,
       observacoes: formData.observacoes,
       ativo: true,
