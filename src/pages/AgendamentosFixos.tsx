@@ -83,8 +83,8 @@ const AgendamentosFixos = () => {
       return;
     }
 
-    if (Number(formData.aulaInicio) >= Number(formData.aulaFim)) {
-      notifications.error("Erro", "A aula de fim deve ser posterior à aula de início.");
+    if (Number(formData.aulaInicio) > Number(formData.aulaFim)) {
+      notifications.error("Erro", "A aula de fim deve ser igual ou posterior à aula de início.");
       return;
     }
 
