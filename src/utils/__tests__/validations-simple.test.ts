@@ -4,8 +4,8 @@ import { Usuario, Espaco } from '@/types';
 
 describe('BusinessValidations - Testes Básicos', () => {
   const mockUsuarios: Usuario[] = [
-    { id: 1, nome: 'João', email: 'joao@test.com', tipo: 'usuario', ativo: true },
-    { id: 2, nome: 'Maria', email: 'maria@test.com', tipo: 'gestor', ativo: false }
+    { id: 'uuid-1-test', nome: 'João', email: 'joao@test.com', tipo: 'usuario', ativo: true },
+    { id: 'uuid-2-test', nome: 'Maria', email: 'maria@test.com', tipo: 'gestor', ativo: false }
   ];
 
   const mockEspacos: Espaco[] = [
@@ -15,17 +15,17 @@ describe('BusinessValidations - Testes Básicos', () => {
 
   describe('validateUsuarioAtivo', () => {
     it('deve validar usuário ativo', () => {
-      const result = BusinessValidations.validateUsuarioAtivo(1, mockUsuarios);
+      const result = BusinessValidations.validateUsuarioAtivo('uuid-1-test', mockUsuarios);
       expect(result).toBeNull();
     });
 
     it('deve rejeitar usuário inativo', () => {
-      const result = BusinessValidations.validateUsuarioAtivo(2, mockUsuarios);
+      const result = BusinessValidations.validateUsuarioAtivo('uuid-2-test', mockUsuarios);
       expect(result).toContain('desativado');
     });
 
     it('deve rejeitar usuário inexistente', () => {
-      const result = BusinessValidations.validateUsuarioAtivo(999, mockUsuarios);
+      const result = BusinessValidations.validateUsuarioAtivo('uuid-inexistente', mockUsuarios);
       expect(result).toContain('não encontrado');
     });
   });
@@ -47,7 +47,7 @@ describe('BusinessValidations - Testes Básicos', () => {
       const amanha = new Date();
       amanha.setDate(amanha.getDate() + 1);
       const dataAmanha = amanha.toISOString().split('T')[0];
-      
+
       const result = BusinessValidations.validateDataAgendamento(dataAmanha);
       expect(result).toBeNull();
     });
@@ -56,7 +56,7 @@ describe('BusinessValidations - Testes Básicos', () => {
       const ontem = new Date();
       ontem.setDate(ontem.getDate() - 1);
       const dataOntem = ontem.toISOString().split('T')[0];
-      
+
       const result = BusinessValidations.validateDataAgendamento(dataOntem);
       expect(result).toContain('passadas');
     });

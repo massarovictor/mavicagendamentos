@@ -6,15 +6,15 @@ import { LoadingSpinner } from '@/components/ui/loading-state';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { Link } from 'react-router-dom';
 import { formatDate } from '@/utils/format';
-import { 
-  Plus, 
-  ArrowRight, 
-  Users, 
-  Building2, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle, 
+import {
+  Plus,
+  ArrowRight,
+  Users,
+  Building2,
+  Calendar,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
   XCircle,
   TrendingUp,
   Activity,
@@ -29,12 +29,12 @@ const AdminDashboard = () => {
     const usuariosAtivos = usuarios.filter(u => u.ativo).length;
     const espacosAtivos = espacos.filter(e => e.ativo).length;
     const totalAgendamentos = agendamentos.length;
-    
+
     const agendamentosPendentes = agendamentos.filter(a => a.status === 'pendente').length;
     const agendamentosAprovados = agendamentos.filter(a => a.status === 'aprovado').length;
     const agendamentosRejeitados = agendamentos.filter(a => a.status === 'rejeitado').length;
-    
-    const agendamentosHoje = agendamentos.filter(a => 
+
+    const agendamentosHoje = agendamentos.filter(a =>
       a.data === new Date().toISOString().split('T')[0]
     ).length;
 
@@ -61,7 +61,7 @@ const AdminDashboard = () => {
       const count = agendamentos.filter(a => a.espacoId === espaco.id).length;
       return { ...espaco, count };
     }).sort((a, b) => b.count - a.count).slice(0, 3);
-    
+
     return espacosCount;
   }, [espacos, agendamentos]);
 
@@ -98,7 +98,7 @@ const AdminDashboard = () => {
     return espacos.find(e => e.id === espacoId)?.nome || 'Espaço não encontrado';
   };
 
-  const getUsuarioNome = (usuarioId: number) => {
+  const getUsuarioNome = (usuarioId: string) => {
     return usuarios.find(u => u.id === usuarioId)?.nome || 'Usuário não encontrado';
   };
 
@@ -194,7 +194,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Ações Rápidas sem Ícones */}
       <Card className="enhanced-card">
         <CardContent className="refined-spacing">
@@ -204,35 +204,34 @@ const AdminDashboard = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { 
-                title: "Aprovar Agendamentos", 
+              {
+                title: "Aprovar Agendamentos",
                 subtitle: `${stats.agendamentosPendentes} pendentes`,
                 href: "/aprovar-agendamentos",
                 urgent: stats.agendamentosPendentes > 0
               },
-              { 
-                title: "Gerenciar Espaços", 
+              {
+                title: "Gerenciar Espaços",
                 subtitle: `${stats.espacosAtivos} ativos`,
                 href: "/espacos"
               },
-              { 
-                title: "Gerenciar Usuários", 
+              {
+                title: "Gerenciar Usuários",
                 subtitle: `${stats.totalUsuarios} cadastrados`,
                 href: "/usuarios"
               },
-              { 
-                title: "Ver Agendamentos", 
+              {
+                title: "Ver Agendamentos",
                 subtitle: `${stats.totalAgendamentos} registros`,
                 href: "/todos-agendamentos"
               }
             ].map((action, index) => (
-              <Button 
+              <Button
                 key={index}
-                asChild 
-                variant="outline" 
-                className={`h-auto p-5 justify-between elegant-button ${
-                  action.urgent ? 'border-status-warning-border bg-status-warning-bg/20 hover:bg-status-warning-bg/30' : ''
-                }`}
+                asChild
+                variant="outline"
+                className={`h-auto p-5 justify-between elegant-button ${action.urgent ? 'border-status-warning-border bg-status-warning-bg/20 hover:bg-status-warning-bg/30' : ''
+                  }`}
               >
                 <Link to={action.href}>
                   <div className="text-left space-y-1">

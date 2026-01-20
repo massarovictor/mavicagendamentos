@@ -18,6 +18,7 @@ export interface Database {
           ativo: boolean
           espacos: number[] | null
           telefone: string | null
+          papel: string | null
           created_at: string
           updated_at: string
         }
@@ -29,6 +30,7 @@ export interface Database {
           ativo?: boolean
           espacos?: number[] | null
           telefone?: string | null
+          papel?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -40,6 +42,7 @@ export interface Database {
           ativo?: boolean
           espacos?: number[] | null
           telefone?: string | null
+          papel?: string | null
           updated_at?: string
         }
       }

@@ -94,10 +94,10 @@ const TodosAgendamentos = () => {
   const handleStatusChange = async (agendamentoId: number, novoStatus: 'aprovado' | 'rejeitado') => {
     try {
       await actions.updateAgendamentoStatus(agendamentoId, novoStatus);
-    if (novoStatus === 'aprovado') {
-      notifications.agendamento.approved();
-    } else {
-      notifications.agendamento.rejected();
+      if (novoStatus === 'aprovado') {
+        notifications.agendamento.approved();
+      } else {
+        notifications.agendamento.rejected();
       }
     } catch (error) {
       notifications.error("Erro", "Falha ao atualizar status do agendamento");
@@ -108,7 +108,7 @@ const TodosAgendamentos = () => {
     return espacos.find(e => e.id === espacoId)?.nome || 'Espaço não encontrado';
   };
 
-  const getUsuarioNome = (usuarioId: number) => {
+  const getUsuarioNome = (usuarioId: string) => {
     return usuarios.find(u => u.id === usuarioId)?.nome || 'Usuário não encontrado';
   };
 
@@ -209,8 +209,8 @@ const TodosAgendamentos = () => {
             </div>
             <div className="sm:w-56">
               <Label htmlFor="status" className="sr-only">Filtrar por status</Label>
-              <Select 
-                value={filters.filters.statusFilter || 'todos'} 
+              <Select
+                value={filters.filters.statusFilter || 'todos'}
                 onValueChange={(value) => filters.updateFilter('statusFilter', value)}
               >
                 <SelectTrigger>
@@ -225,8 +225,8 @@ const TodosAgendamentos = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={filters.clearFilters}
               className="w-full sm:w-auto"
             >
@@ -237,107 +237,107 @@ const TodosAgendamentos = () => {
       </Card>
 
       <div className="space-y-6">
-          <Card className="enhanced-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <List className="w-5 h-5 text-muted-foreground" />
-                Lista de Agendamentos
-              </CardTitle>
-              <CardDescription>
-                Mostrando {pagination.paginationInfo.startItem} a {pagination.paginationInfo.endItem} de {pagination.paginationInfo.totalItems} agendamentos
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveTable
-                data={pagination.paginatedData}
-                columns={[
-                  {
-                    key: 'espaco',
-                    header: 'Espaço',
-                    accessor: (agendamento) => getEspacoNome(agendamento.espacoId),
-                    mobileLabel: 'Espaço'
-                  },
-                  {
-                    key: 'usuario',
-                    header: 'Usuário',
-                    accessor: (agendamento) => getUsuarioNome(agendamento.usuarioId),
-                    mobileLabel: 'Usuário',
-                    hiddenOnMobile: true
-                  },
-                  {
-                    key: 'data',
-                    header: 'Data',
-                    accessor: (agendamento) => formatDate(agendamento.data),
-                    mobileLabel: 'Data'
-                  },
-                  {
-                    key: 'aulas',
-                    header: 'Horário',
-                    accessor: (agendamento) => formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula),
-                    mobileLabel: 'Horário',
-                    hiddenOnMobile: true
-                  },
-                  {
-                    key: 'status',
-                    header: 'Status',
-                    accessor: (agendamento) => getStatusBadge(agendamento.status),
-                    mobileLabel: 'Status'
-                  },
-                  {
-                    key: 'observacoes',
-                    header: 'Observações',
-                    accessor: (agendamento) => (
-                      <span className="text-sm text-muted-foreground truncate block max-w-[150px]" title={agendamento.observacoes}>
-                        {agendamento.observacoes || '-'}
-                      </span>
-                    ),
-                    mobileLabel: 'Observações',
-                    hiddenOnMobile: true
-                  },
-                  {
-                    key: 'acoes',
-                    header: 'Ações',
-                    accessor: (agendamento) => (
-                      <>
-                        {agendamento.status === 'pendente' && (
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleStatusChange(agendamento.id, 'aprovado')}
-                              className="text-status-success-foreground hover:bg-status-success-subtle"
-                              title="Aprovar"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => handleStatusChange(agendamento.id, 'rejeitado')}
-                              className="text-status-error-foreground hover:bg-status-error-subtle"
-                              title="Rejeitar"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    ),
-                    mobileLabel: 'Ações'
-                  }
-                ]}
-                emptyState={
-                  <div className="text-center py-12">
-                    <div className="text-muted-foreground">
-                      <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="font-medium">Nenhum agendamento encontrado</p>
-                      <p className="text-sm">Tente ajustar os filtros ou crie um novo agendamento.</p>
-                    </div>
-                  </div>
+        <Card className="enhanced-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <List className="w-5 h-5 text-muted-foreground" />
+              Lista de Agendamentos
+            </CardTitle>
+            <CardDescription>
+              Mostrando {pagination.paginationInfo.startItem} a {pagination.paginationInfo.endItem} de {pagination.paginationInfo.totalItems} agendamentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveTable
+              data={pagination.paginatedData}
+              columns={[
+                {
+                  key: 'espaco',
+                  header: 'Espaço',
+                  accessor: (agendamento) => getEspacoNome(agendamento.espacoId),
+                  mobileLabel: 'Espaço'
+                },
+                {
+                  key: 'usuario',
+                  header: 'Usuário',
+                  accessor: (agendamento) => getUsuarioNome(agendamento.usuarioId),
+                  mobileLabel: 'Usuário',
+                  hiddenOnMobile: true
+                },
+                {
+                  key: 'data',
+                  header: 'Data',
+                  accessor: (agendamento) => formatDate(agendamento.data),
+                  mobileLabel: 'Data'
+                },
+                {
+                  key: 'aulas',
+                  header: 'Horário',
+                  accessor: (agendamento) => formatAulas(agendamento.aulaInicio as NumeroAula, agendamento.aulaFim as NumeroAula),
+                  mobileLabel: 'Horário',
+                  hiddenOnMobile: true
+                },
+                {
+                  key: 'status',
+                  header: 'Status',
+                  accessor: (agendamento) => getStatusBadge(agendamento.status),
+                  mobileLabel: 'Status'
+                },
+                {
+                  key: 'observacoes',
+                  header: 'Observações',
+                  accessor: (agendamento) => (
+                    <span className="text-sm text-muted-foreground truncate block max-w-[150px]" title={agendamento.observacoes}>
+                      {agendamento.observacoes || '-'}
+                    </span>
+                  ),
+                  mobileLabel: 'Observações',
+                  hiddenOnMobile: true
+                },
+                {
+                  key: 'acoes',
+                  header: 'Ações',
+                  accessor: (agendamento) => (
+                    <>
+                      {agendamento.status === 'pendente' && (
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleStatusChange(agendamento.id, 'aprovado')}
+                            className="text-status-success-foreground hover:bg-status-success-subtle"
+                            title="Aprovar"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleStatusChange(agendamento.id, 'rejeitado')}
+                            className="text-status-error-foreground hover:bg-status-error-subtle"
+                            title="Rejeitar"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ),
+                  mobileLabel: 'Ações'
                 }
-              />
-            </CardContent>
-          </Card>
+              ]}
+              emptyState={
+                <div className="text-center py-12">
+                  <div className="text-muted-foreground">
+                    <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">Nenhum agendamento encontrado</p>
+                    <p className="text-sm">Tente ajustar os filtros ou crie um novo agendamento.</p>
+                  </div>
+                </div>
+              }
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

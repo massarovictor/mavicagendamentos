@@ -20,7 +20,6 @@ interface UsuarioFormData {
   nome: string;
   email: string;
   tipo: TipoUsuario;
-  senha?: string;
   espacos: number[];
 }
 
@@ -29,7 +28,6 @@ const validateForm = (values: UsuarioFormData, isEditing: boolean) => {
   if (!values.nome.trim()) errors.nome = 'Nome é obrigatório';
   if (!values.email.trim() || !/\S+@\S+\.\S+/.test(values.email)) errors.email = 'Email inválido';
   if (!values.tipo) errors.tipo = 'Tipo é obrigatório';
-  if (!isEditing && !values.senha) errors.senha = 'Senha é obrigatória para novos usuários';
   return errors;
 };
 
@@ -43,14 +41,14 @@ const GerenciarUsuarios = () => {
   const [usuarioToDelete, setUsuarioToDelete] = useState<Usuario | null>(null);
 
   const form = useForm<UsuarioFormData>({
-    initialValues: { nome: '', email: '', tipo: 'usuario', senha: '', espacos: [] },
+    initialValues: { nome: '', email: '', tipo: 'usuario', espacos: [] },
     onSubmit: async (values) => {
       const formErrors = validateForm(values, !!editingUsuario);
       if (Object.keys(formErrors).length > 0) {
         Object.values(formErrors).forEach(err => notifications.error('Erro de validação', err));
         return;
       }
-      
+
       const emailExists = usuarios.some(u => u.email.toLowerCase() === values.email.toLowerCase() && u.id !== editingUsuario?.id);
       if (emailExists) {
         notifications.error('Erro', 'Já existe um usuário com este email.');
@@ -61,7 +59,7 @@ const GerenciarUsuarios = () => {
         await actions.updateUsuario({ ...editingUsuario, ...values, espacos: values.tipo === 'gestor' ? values.espacos : undefined });
         notifications.usuario.updated();
       } else {
-        await actions.addUsuario({ ...values, id: 0, ativo: true, espacos: values.tipo === 'gestor' ? values.espacos : [] });
+        await actions.addUsuario({ ...values, id: '', ativo: true, espacos: values.tipo === 'gestor' ? values.espacos : [] });
         notifications.usuario.created();
       }
       setIsDialogOpen(false);
@@ -70,7 +68,7 @@ const GerenciarUsuarios = () => {
 
   const handleEdit = (usuario: Usuario) => {
     setEditingUsuario(usuario);
-    form.setValues({ nome: usuario.nome, email: usuario.email, tipo: usuario.tipo, espacos: usuario.espacos || [], senha: usuario.senha || '' });
+    form.setValues({ nome: usuario.nome, email: usuario.email, tipo: usuario.tipo, espacos: usuario.espacos || [] });
     setIsDialogOpen(true);
   };
 
@@ -107,14 +105,14 @@ const GerenciarUsuarios = () => {
     try {
       await actions.deleteUsuario(usuarioToDelete.id);
       notifications.usuario.deleted();
-    } catch(e) {
+    } catch (e) {
       notifications.error("Erro", "Falha ao excluir usuário.");
     } finally {
       setDeleteDialogOpen(false);
     }
   };
-  
-  const filteredUsuarios = useMemo(() => usuarios.filter(u => 
+
+  const filteredUsuarios = useMemo(() => usuarios.filter(u =>
     (u.nome.toLowerCase().includes(filters.searchTerm?.toLowerCase() || '') || u.email.toLowerCase().includes(filters.searchTerm?.toLowerCase() || '')) &&
     (filters.statusFilter === 'todos' || !filters.statusFilter || u.tipo === filters.statusFilter)
   ), [usuarios, filters]);
@@ -149,15 +147,17 @@ const GerenciarUsuarios = () => {
     { key: 'tipo', header: 'Tipo', accessor: (u: Usuario) => getTipoBadge(u.tipo), hiddenOnMobile: true },
     { key: 'status', header: 'Status', accessor: (u: Usuario) => getStatusBadge(u.ativo) },
     { key: 'agendamentos', header: 'Agendamentos', accessor: (u: Usuario) => <span className="caption-text">{agendamentos.filter(a => a.usuarioId === u.id).length}</span>, hiddenOnMobile: true },
-    { key: 'acoes', header: 'Ações', accessor: (u: Usuario) => (
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => handleEdit(u)}><Edit className="h-4 w-4" /></Button>
-        <Button variant="outline" size="sm" onClick={() => handleToggleStatus(u)}>{u.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
-        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(u)}><Trash2 className="h-4 w-4" /></Button>
-      </div>
-    )}
+    {
+      key: 'acoes', header: 'Ações', accessor: (u: Usuario) => (
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleEdit(u)}><Edit className="h-4 w-4" /></Button>
+          <Button variant="outline" size="sm" onClick={() => handleToggleStatus(u)}>{u.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+          <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(u)}><Trash2 className="h-4 w-4" /></Button>
+        </div>
+      )
+    }
   ];
-  
+
   const mobileCardRender = (item: Usuario) => (
     <div className="p-4 space-y-4">
       <div className="flex justify-between items-start">
@@ -166,9 +166,9 @@ const GerenciarUsuarios = () => {
       </div>
       <div>{getTipoBadge(item.tipo)}</div>
       <div className="pt-3 flex gap-2 border-t">
-        <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1"><Edit className="h-4 w-4 mr-2"/>Editar</Button>
-        <Button variant="outline" size="sm" onClick={() => handleToggleStatus(item)} className="flex-1">{item.ativo ? <EyeOff className="h-4 w-4 mr-2"/> : <Eye className="h-4 w-4 mr-2"/>}{item.ativo ? 'Desativar' : 'Ativar'}</Button>
-        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(item)} className="flex-1"><Trash2 className="h-4 w-4 mr-2"/>Excluir</Button>
+        <Button variant="outline" size="sm" onClick={() => handleEdit(item)} className="flex-1"><Edit className="h-4 w-4 mr-2" />Editar</Button>
+        <Button variant="outline" size="sm" onClick={() => handleToggleStatus(item)} className="flex-1">{item.ativo ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}{item.ativo ? 'Desativar' : 'Ativar'}</Button>
+        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(item)} className="flex-1"><Trash2 className="h-4 w-4 mr-2" />Excluir</Button>
       </div>
     </div>
   );
@@ -198,42 +198,31 @@ const GerenciarUsuarios = () => {
             <form onSubmit={form.handleSubmit} className="space-y-4 pt-4">
               <div>
                 <Label htmlFor="nome">Nome *</Label>
-                <Input 
-                  id="nome" 
-                  value={form.values.nome} 
-                  onChange={e => form.setValue('nome', e.target.value)} 
-                  placeholder="Nome Completo" 
+                <Input
+                  id="nome"
+                  value={form.values.nome}
+                  onChange={e => form.setValue('nome', e.target.value)}
+                  placeholder="Nome Completo"
                   className={form.errors.nome ? 'border-red-500' : ''}
                 />
               </div>
               <div>
                 <Label htmlFor="email">Email *</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  value={form.values.email} 
-                  onChange={e => form.setValue('email', e.target.value)} 
-                  placeholder="email@exemplo.com" 
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.values.email}
+                  onChange={e => form.setValue('email', e.target.value)}
+                  placeholder="email@exemplo.com"
                   className={form.errors.email ? 'border-red-500' : ''}
                 />
               </div>
-              <div>
-                <Label htmlFor="senha">
-                  Senha {editingUsuario ? '(deixe em branco para manter)' : '*'}
-                </Label>
-                <Input 
-                  id="senha" 
-                  type="password" 
-                  value={form.values.senha} 
-                  onChange={e => form.setValue('senha', e.target.value)} 
-                  className={form.errors.senha ? 'border-red-500' : ''}
-                />
-              </div>
+
               <div>
                 <Label htmlFor="tipo">Tipo *</Label>
                 <Select value={form.values.tipo} onValueChange={(v) => form.setValue('tipo', v as TipoUsuario)}>
                   <SelectTrigger>
-                    <SelectValue/>
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="usuario">Usuário</SelectItem>
@@ -248,13 +237,13 @@ const GerenciarUsuarios = () => {
                   <div className="grid grid-cols-2 gap-2 border p-2 rounded-md max-h-32 overflow-y-auto">
                     {espacos.filter(e => e.ativo).map(espaco => (
                       <div key={espaco.id} className="flex items-center gap-2">
-                        <Checkbox 
-                          id={`espaco-${espaco.id}`} 
-                          checked={form.values.espacos.includes(espaco.id)} 
-                          onCheckedChange={checked => 
-                            form.setValue('espacos', 
-                              checked 
-                                ? [...form.values.espacos, espaco.id] 
+                        <Checkbox
+                          id={`espaco-${espaco.id}`}
+                          checked={form.values.espacos.includes(espaco.id)}
+                          onCheckedChange={checked =>
+                            form.setValue('espacos',
+                              checked
+                                ? [...form.values.espacos, espaco.id]
                                 : form.values.espacos.filter(id => id !== espaco.id)
                             )
                           }
@@ -281,19 +270,19 @@ const GerenciarUsuarios = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Users className="w-6 h-6 icon-accent"/></div><div className="metric-display">{stats.total}</div></div><div className="card-title">Total</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><UserCheck className="w-6 h-6 text-status-success"/></div><div className="metric-display text-status-success">{stats.ativos}</div></div><div className="card-title">Ativos</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-error-bg rounded-lg"><Shield className="w-6 h-6 text-status-error"/></div><div className="metric-display text-status-error">{stats.admins}</div></div><div className="card-title">Admins</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-info-bg rounded-lg"><Eye className="w-6 h-6 text-status-info"/></div><div className="metric-display text-status-info">{stats.gestores}</div></div><div className="card-title">Gestores</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Users className="w-6 h-6 icon-accent" /></div><div className="metric-display">{stats.total}</div></div><div className="card-title">Total</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><UserCheck className="w-6 h-6 text-status-success" /></div><div className="metric-display text-status-success">{stats.ativos}</div></div><div className="card-title">Ativos</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-error-bg rounded-lg"><Shield className="w-6 h-6 text-status-error" /></div><div className="metric-display text-status-error">{stats.admins}</div></div><div className="card-title">Admins</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-info-bg rounded-lg"><Eye className="w-6 h-6 text-status-info" /></div><div className="metric-display text-status-info">{stats.gestores}</div></div><div className="card-title">Gestores</div></CardContent></Card>
       </div>
-      
+
       <Card className="enhanced-card">
         <CardContent className="refined-spacing">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2 self-start"><Users className="w-5 h-5 icon-muted" /><h2 className="card-title">Lista de Usuários</h2></div>
             <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              <div className="relative flex-1"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" /><Input placeholder="Buscar por nome ou email..." value={filters.searchTerm || ''} onChange={e => updateFilter('searchTerm', e.target.value)} className="pl-10"/></div>
-              <Select value={filters.statusFilter || 'todos'} onValueChange={(v) => updateFilter('statusFilter', v)}><SelectTrigger className="w-full sm:w-[180px]"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="todos">Todos os Tipos</SelectItem><SelectItem value="admin">Admin</SelectItem><SelectItem value="gestor">Gestor</SelectItem><SelectItem value="usuario">Usuário</SelectItem></SelectContent></Select>
+              <div className="relative flex-1"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" /><Input placeholder="Buscar por nome ou email..." value={filters.searchTerm || ''} onChange={e => updateFilter('searchTerm', e.target.value)} className="pl-10" /></div>
+              <Select value={filters.statusFilter || 'todos'} onValueChange={(v) => updateFilter('statusFilter', v)}><SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos os Tipos</SelectItem><SelectItem value="admin">Admin</SelectItem><SelectItem value="gestor">Gestor</SelectItem><SelectItem value="usuario">Usuário</SelectItem></SelectContent></Select>
               <Button variant="outline" onClick={clearFilters} className="w-full sm:w-auto">Limpar</Button>
             </div>
           </div>

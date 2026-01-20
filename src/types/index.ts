@@ -1,14 +1,14 @@
 export type TipoUsuario = 'admin' | 'gestor' | 'usuario';
 
 export interface Usuario {
-  id: number;
+  id: string; // UUID do Supabase Auth
   nome: string;
   email: string;
-  senha?: string;
   tipo: TipoUsuario;
   ativo: boolean;
-  espacos?: number[]; // IDs dos espaços que o gestor gerencia (mantido para compatibilidade)
+  espacos?: number[]; // IDs dos espaços que o gestor gerencia
   telefone?: string;
+  papel?: string; // Papel no sistema (professor, coordenador, etc.)
 }
 
 export interface EspacoGestor {
@@ -32,7 +32,7 @@ export interface Espaco {
 export interface Agendamento {
   id: number;
   espacoId: number;
-  usuarioId: number;
+  usuarioId: string; // UUID do usuário
   data: string;
   aulaInicio: number; // Aula de 1 a 9
   aulaFim: number; // Aula de 1 a 9
@@ -45,7 +45,7 @@ export interface Agendamento {
 export interface AgendamentoFixo {
   id: number;
   espacoId: number;
-  usuarioId: number;
+  usuarioId: string; // UUID do usuário
   dataInicio: string;
   dataFim: string;
   aulaInicio: number; // Aula de 1 a 9

@@ -98,7 +98,7 @@ export const agendamentoFixoSchema = z.object({
 export class DataIntegrityValidations {
   static validateDataStructure<T>(data: any, expectedKeys: string[]): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
+
     if (!data || typeof data !== 'object') {
       return { isValid: false, errors: ['Dados devem ser um objeto válido'] };
     }
@@ -110,8 +110,8 @@ export class DataIntegrityValidations {
     }
 
     // Verificar tipos básicos
-    if ('id' in data && (typeof data.id !== 'number' || data.id <= 0)) {
-      errors.push('ID deve ser um número positivo');
+    if ('id' in data && typeof data.id !== 'number' && typeof data.id !== 'string') {
+      errors.push('ID deve ser um número ou string (UUID)');
     }
 
     if ('ativo' in data && typeof data.ativo !== 'boolean') {
@@ -135,7 +135,7 @@ export class DataIntegrityValidations {
 
   static sanitizeString(input: string): string {
     if (typeof input !== 'string') return '';
-    
+
     return input
       .trim()
       .replace(/\s+/g, ' ') // Múltiplos espaços -> espaço único
@@ -180,7 +180,7 @@ export class DataIntegrityValidations {
     // Verificar se gestores têm espaços válidos
     data.usuarios.forEach(usuario => {
       if (usuario.tipo === 'gestor' && usuario.espacos) {
-        const espacosInvalidos = usuario.espacos.filter(espacoId => 
+        const espacosInvalidos = usuario.espacos.filter(espacoId =>
           !data.espacos.some(e => e.id === espacoId)
         );
         if (espacosInvalidos.length > 0) {
@@ -228,7 +228,7 @@ export class SecurityValidations {
   static validatePermissions(usuario: Usuario, action: string, targetId?: number): boolean {
     // Admin pode tudo
     if (usuario.tipo === 'admin') return true;
-    
+
     // Gestor tem permissões específicas
     if (usuario.tipo === 'gestor') {
       switch (action) {
@@ -242,7 +242,7 @@ export class SecurityValidations {
           return false;
       }
     }
-    
+
     // Usuário comum
     if (usuario.tipo === 'usuario') {
       switch (action) {
@@ -258,20 +258,20 @@ export class SecurityValidations {
 
   static rateLimit = (() => {
     const attempts = new Map<string, { count: number; lastAttempt: number }>();
-    
+
     return (key: string, maxAttempts: number = 5, windowMs: number = 60000): boolean => {
       const now = Date.now();
       const entry = attempts.get(key) || { count: 0, lastAttempt: 0 };
-      
+
       // Reset se passou da janela de tempo
       if (now - entry.lastAttempt > windowMs) {
         entry.count = 0;
       }
-      
+
       entry.count++;
       entry.lastAttempt = now;
       attempts.set(key, entry);
-      
+
       return entry.count <= maxAttempts;
     };
   })();
@@ -290,7 +290,7 @@ export class BusinessValidations {
       return 'Dados do agendamento inválidos';
     }
 
-    const conflito = agendamentosExistentes.find(a => 
+    const conflito = agendamentosExistentes.find(a =>
       a.id !== excludeId &&
       a.espacoId === novoAgendamento.espacoId &&
       a.data === novoAgendamento.data &&
@@ -303,7 +303,7 @@ export class BusinessValidations {
 
     if (conflito) {
       if (conflito.status === 'aprovado') {
-        return conflito.agendamentoFixoId 
+        return conflito.agendamentoFixoId
           ? 'Este horário está ocupado por um agendamento fixo (não pode ser alterado)'
           : 'Este horário já está aprovado para outro usuário';
       } else {
@@ -331,8 +331,8 @@ export class BusinessValidations {
     return null;
   }
 
-  static validateUsuarioAtivo(usuarioId: number, usuarios: Usuario[]): string | null {
-    if (!usuarioId || usuarioId <= 0) {
+  static validateUsuarioAtivo(usuarioId: string, usuarios: Usuario[]): string | null {
+    if (!usuarioId) {
       return 'ID do usuário inválido';
     }
 
@@ -349,8 +349,8 @@ export class BusinessValidations {
   }
 
   static validatePermissaoEspaco(
-    espacoId: number, 
-    usuario: Usuario, 
+    espacoId: number,
+    usuario: Usuario,
     operacao: 'visualizar' | 'gerenciar' | 'agendar'
   ): string | null {
     if (!usuario) {
@@ -362,17 +362,17 @@ export class BusinessValidations {
     }
 
     if (usuario.tipo === 'admin') return null;
-    
+
     if (operacao === 'gerenciar' && usuario.tipo === 'gestor') {
-      return usuario.espacos?.includes(espacoId) 
-        ? null 
+      return usuario.espacos?.includes(espacoId)
+        ? null
         : 'Você não tem permissão para gerenciar este espaço';
     }
-    
+
     if (operacao === 'agendar' && usuario.tipo === 'usuario') {
       return null; // Usuários podem agendar qualquer espaço ativo
     }
-    
+
     return 'Permissão insuficiente';
   }
 
@@ -388,15 +388,15 @@ export class BusinessValidations {
 
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    
+
     if (dataAgendamento < hoje) {
       return 'Não é possível agendar para datas passadas';
     }
-    
+
     // Validar se não é muito no futuro (ex: 6 meses)
     const seiseMesesFuturo = new Date();
     seiseMesesFuturo.setMonth(seiseMesesFuturo.getMonth() + 6);
-    
+
     if (dataAgendamento > seiseMesesFuturo) {
       return 'Agendamentos só podem ser feitos com até 6 meses de antecedência';
     }
@@ -406,7 +406,7 @@ export class BusinessValidations {
     if (diaSemana === 0) {
       return 'Agendamentos não são permitidos aos domingos';
     }
-    
+
     return null;
   }
 
@@ -418,13 +418,13 @@ export class BusinessValidations {
     if (aulaInicio < 1 || aulaInicio > 9 || aulaFim < 1 || aulaFim > 9) {
       return 'Aulas devem estar entre 1 e 9';
     }
-    
+
     if (aulaInicio > aulaFim) {
       return 'Aula de início deve ser anterior ou igual à aula de fim';
     }
-    
+
     // Removida restrição de duração máxima - agora permite qualquer quantidade de aulas consecutivas
-    
+
     return null;
   }
 
@@ -433,7 +433,7 @@ export class BusinessValidations {
     if (aulaInicio < 1 || aulaFim > 9) {
       return 'Agendamentos permitidos apenas das 7h às 22h (1ª à 9ª aula)';
     }
-    
+
     return null;
   }
 
@@ -509,7 +509,7 @@ export class BusinessValidations {
 
     const diaSemana = dataAgendamento.getDay();
 
-    const agendamentosConflitantes = agendamentosExistentes.filter(a => 
+    const agendamentosConflitantes = agendamentosExistentes.filter(a =>
       a.id !== excludeId &&
       a.espacoId === agendamento.espacoId &&
       a.data === agendamento.data &&
@@ -609,11 +609,11 @@ export class FormatUtils {
   static formatAulaRangeComHorario(aulaInicio: number, aulaFim: number): string {
     const horarioInicio = AULAS_HORARIOS[aulaInicio as NumeroAula];
     const horarioFim = AULAS_HORARIOS[aulaFim as NumeroAula];
-    
+
     if (!horarioInicio || !horarioFim) {
       return this.formatAulaRange(aulaInicio, aulaFim);
     }
-    
+
     return `${aulaInicio}ª à ${aulaFim}ª aula (${horarioInicio.inicio}-${horarioFim.fim})`;
   }
 
@@ -680,7 +680,7 @@ export class FilterUtils {
     });
   }
 
-  static filterAgendamentosByUser(agendamentos: Agendamento[], usuarioId?: number) {
+  static filterAgendamentosByUser(agendamentos: Agendamento[], usuarioId?: string) {
     if (!usuarioId) return agendamentos;
     return agendamentos.filter(a => a.usuarioId === usuarioId);
   }
@@ -692,12 +692,12 @@ export class FilterUtils {
 
   static searchAgendamentos(agendamentos: Agendamento[], searchTerm: string, espacos: Espaco[], usuarios: Usuario[]) {
     if (!searchTerm) return agendamentos;
-    
+
     const term = DataIntegrityValidations.sanitizeString(searchTerm.toLowerCase());
     return agendamentos.filter(a => {
       const espaco = espacos.find(e => e.id === a.espacoId);
       const usuario = usuarios.find(u => u.id === a.usuarioId);
-      
+
       return (
         espaco?.nome.toLowerCase().includes(term) ||
         usuario?.nome.toLowerCase().includes(term) ||

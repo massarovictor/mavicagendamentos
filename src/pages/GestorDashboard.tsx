@@ -30,9 +30,9 @@ const GestorDashboard = () => {
       default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
-  
-  const getUsuarioNome = (usuarioId: number) => usuarios.find(u => u.id === usuarioId)?.nome || 'N/A';
-  
+
+  const getUsuarioNome = (usuarioId: string) => usuarios.find(u => u.id === usuarioId)?.nome || 'N/A';
+
   if (loading) return <LoadingSpinner message="Carregando dados..." />;
 
   const stats = {
@@ -52,10 +52,10 @@ const GestorDashboard = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Settings className="w-6 h-6 icon-accent"/></div><div className="metric-display">{stats.meusEspacos}</div></div><div className="card-title">Meus Espaços</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-warning/10 rounded-lg"><Clock className="w-6 h-6 text-status-warning"/></div><div className="metric-display text-status-warning">{stats.pendentes}</div></div><div className="card-title">Pendentes</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-info-bg rounded-lg"><Calendar className="w-6 h-6 text-status-info"/></div><div className="metric-display text-status-info">{stats.proximos}</div></div><div className="card-title">Próximos</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><Check className="w-6 h-6 text-status-success"/></div><div className="metric-display text-status-success">{stats.totalAgendamentos}</div></div><div className="card-title">Total Agendado</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Settings className="w-6 h-6 icon-accent" /></div><div className="metric-display">{stats.meusEspacos}</div></div><div className="card-title">Meus Espaços</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-warning/10 rounded-lg"><Clock className="w-6 h-6 text-status-warning" /></div><div className="metric-display text-status-warning">{stats.pendentes}</div></div><div className="card-title">Pendentes</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-info-bg rounded-lg"><Calendar className="w-6 h-6 text-status-info" /></div><div className="metric-display text-status-info">{stats.proximos}</div></div><div className="card-title">Próximos</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><Check className="w-6 h-6 text-status-success" /></div><div className="metric-display text-status-success">{stats.totalAgendamentos}</div></div><div className="card-title">Total Agendado</div></CardContent></Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">

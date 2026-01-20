@@ -6,7 +6,7 @@ interface FilterState {
   searchTerm: string;
   statusFilter: string;
   dateFilter: string;
-  userFilter: number | null;
+  userFilter: string | null;
   espacoFilter: number | null;
 }
 
@@ -22,7 +22,7 @@ export const useFilters = () => {
   const [filters, setFilters] = useState<FilterState>(initialFilterState);
 
   const updateFilter = useCallback(<K extends keyof FilterState>(
-    key: K, 
+    key: K,
     value: FilterState[K]
   ) => {
     setFilters(prev => ({ ...prev, [key]: value }));

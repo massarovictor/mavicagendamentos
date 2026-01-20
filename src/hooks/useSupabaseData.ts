@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/database';
 import { Usuario, Espaco, Agendamento, AgendamentoFixo } from '@/types';
@@ -19,16 +19,44 @@ interface SupabaseState {
   error: string | null;
 }
 
-// Funções de conversão entre tipos Supabase e tipos da aplicação
+const CACHE_KEYS = {
+  USUARIOS: 'mavic_data_usuarios',
+  ESPACOS: 'mavic_data_espacos',
+  AGENDAMENTOS: 'mavic_data_agendamentos',
+  FIXOS: 'mavic_data_fixos',
+};
+
+function getCached<T>(key: string, defaultValue: T): T {
+  try {
+    const cached = localStorage.getItem(key);
+    return cached ? JSON.parse(cached) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+}
+
+function setCached(key: string, data: any) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) { }
+}
+
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, errMsg: string): Promise<T> {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errMsg)), ms))
+  ]);
+}
+
 const convertUsuario = (row: UsuarioRow): Usuario => ({
-  id: parseInt(row.id.replace(/-/g, '').substring(0, 8), 16), // Converter UUID para number para compatibilidade
+  id: row.id,
   nome: row.nome,
   email: row.email,
   tipo: row.tipo,
   ativo: row.ativo,
   espacos: row.espacos || undefined,
   telefone: row.telefone || undefined,
-  // Não incluímos senha por segurança
+  papel: row.papel || undefined,
 });
 
 const convertEspaco = (row: EspacoRow): Espaco => ({
@@ -43,7 +71,7 @@ const convertEspaco = (row: EspacoRow): Espaco => ({
 const convertAgendamento = (row: AgendamentoRow): Agendamento => ({
   id: row.id,
   espacoId: row.espaco_id,
-  usuarioId: parseInt(row.usuario_id.replace(/-/g, '').substring(0, 8), 16), // Converter UUID para number
+  usuarioId: row.usuario_id,
   data: row.data,
   aulaInicio: row.aula_inicio,
   aulaFim: row.aula_fim,
@@ -56,7 +84,7 @@ const convertAgendamento = (row: AgendamentoRow): Agendamento => ({
 const convertAgendamentoFixo = (row: AgendamentoFixoRow): AgendamentoFixo => ({
   id: row.id,
   espacoId: row.espaco_id,
-  usuarioId: parseInt(row.usuario_id.replace(/-/g, '').substring(0, 8), 16), // Converter UUID para number
+  usuarioId: row.usuario_id,
   dataInicio: row.data_inicio,
   dataFim: row.data_fim,
   aulaInicio: row.aula_inicio,
@@ -67,16 +95,22 @@ const convertAgendamentoFixo = (row: AgendamentoFixoRow): AgendamentoFixo => ({
   criadoEm: row.created_at,
 });
 
-// Funções de conversão reversa (aplicação -> Supabase)
-const convertToUsuarioInsert = (usuario: Usuario, userUuid: string): Tables['usuarios']['Insert'] => ({
-  id: userUuid,
-  nome: usuario.nome,
-  email: usuario.email,
-  tipo: usuario.tipo,
-  ativo: usuario.ativo,
-  espacos: usuario.espacos || null, // Array será enviado diretamente
-  telefone: usuario.telefone || null,
-});
+const convertToUsuarioInsert = (usuario: Usuario, userUuid: string): Tables['usuarios']['Insert'] => {
+  const insert: Tables['usuarios']['Insert'] = {
+    id: userUuid,
+    nome: usuario.nome,
+    email: usuario.email,
+    tipo: usuario.tipo,
+    ativo: usuario.ativo,
+    espacos: usuario.espacos || null,
+    telefone: usuario.telefone || null,
+  };
+  // Só incluir papel se tiver um valor (banco tem default 'professor')
+  if (usuario.papel) {
+    insert.papel = usuario.papel;
+  }
+  return insert;
+};
 
 const convertToEspacoInsert = (espaco: Espaco): Tables['espacos']['Insert'] => ({
   nome: espaco.nome,
@@ -86,63 +120,57 @@ const convertToEspacoInsert = (espaco: Espaco): Tables['espacos']['Insert'] => (
   ativo: espaco.ativo,
 });
 
-const convertToAgendamentoInsert = (agendamento: Agendamento, userUuid: string): Tables['agendamentos']['Insert'] => ({
-  espaco_id: agendamento.espacoId,
-  usuario_id: userUuid,
-  data: agendamento.data,
-  aula_inicio: agendamento.aulaInicio,
-  aula_fim: agendamento.aulaFim,
-  status: agendamento.status,
-  observacoes: agendamento.observacoes || null,
-  agendamento_fixo_id: agendamento.agendamentoFixoId || null,
-});
-
 export const useSupabaseData = () => {
-  const [state, setState] = useState<SupabaseState>({
-    usuarios: [],
-    espacos: [],
-    agendamentos: [],
-    agendamentosFixos: [],
+  const [state, setState] = useState<SupabaseState>(() => ({
+    usuarios: getCached(CACHE_KEYS.USUARIOS, []),
+    espacos: getCached(CACHE_KEYS.ESPACOS, []),
+    agendamentos: getCached(CACHE_KEYS.AGENDAMENTOS, []),
+    agendamentosFixos: getCached(CACHE_KEYS.FIXOS, []),
     loading: true,
     error: null,
-  });
+  }));
 
-  // Mapeamento UUID <-> ID numérico para compatibilidade
-  const [userUuidMap, setUserUuidMap] = useState<Map<number, string>>(new Map());
-
-  const loadData = useCallback(async () => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
+  const loadData = useCallback(async (isBackground = false) => {
+    if (!isBackground) setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const [
-        usuariosResponse,
-        espacosResponse,
-        agendamentosResponse,
-        agendamentosFixosResponse
-      ] = await Promise.all([
+      const QUERY_TIMEOUT = 2500;
+
+      const { data: usersData, error: usersError } = await withTimeout(
         supabase.from('usuarios').select('*').order('created_at'),
+        QUERY_TIMEOUT,
+        'Timeout usuários'
+      );
+      if (usersError) throw usersError;
+      const usuarios = usersData?.map(convertUsuario) || [];
+      setCached(CACHE_KEYS.USUARIOS, usuarios);
+
+      const { data: espacosData, error: espacosError } = await withTimeout(
         supabase.from('espacos').select('*').order('id'),
+        QUERY_TIMEOUT,
+        'Timeout espaços'
+      );
+      if (espacosError) throw espacosError;
+      const espacos = espacosData?.map(convertEspaco) || [];
+      setCached(CACHE_KEYS.ESPACOS, espacos);
+
+      const { data: agendamentosData, error: agendamentosError } = await withTimeout(
         supabase.from('agendamentos').select('*').order('created_at', { ascending: false }),
-        supabase.from('agendamentos_fixos').select('*').order('created_at', { ascending: false })
-      ]);
+        QUERY_TIMEOUT,
+        'Timeout agendamentos'
+      );
+      if (agendamentosError) throw agendamentosError;
+      const agendamentos = agendamentosData?.map(convertAgendamento) || [];
+      setCached(CACHE_KEYS.AGENDAMENTOS, agendamentos);
 
-      if (usuariosResponse.error) throw usuariosResponse.error;
-      if (espacosResponse.error) throw espacosResponse.error;
-      if (agendamentosResponse.error) throw agendamentosResponse.error;
-      if (agendamentosFixosResponse.error) throw agendamentosFixosResponse.error;
-
-      // Processar usuários e criar o mapa de UUID
-      const uuidMap = new Map<number, string>();
-      const usuarios = usuariosResponse.data.map(row => {
-        const usuario = convertUsuario(row);
-        uuidMap.set(usuario.id, row.id);
-        return usuario;
-      });
-      setUserUuidMap(uuidMap);
-
-      const espacos = espacosResponse.data.map(convertEspaco);
-      const agendamentos = agendamentosResponse.data.map(convertAgendamento);
-      const agendamentosFixos = agendamentosFixosResponse.data.map(convertAgendamentoFixo);
+      const { data: fixosData, error: fixosError } = await withTimeout(
+        supabase.from('agendamentos_fixos').select('*').order('created_at', { ascending: false }),
+        QUERY_TIMEOUT,
+        'Timeout fixos'
+      );
+      if (fixosError) throw fixosError;
+      const agendamentosFixos = fixosData?.map(convertAgendamentoFixo) || [];
+      setCached(CACHE_KEYS.FIXOS, agendamentosFixos);
 
       setState({
         usuarios,
@@ -153,423 +181,225 @@ export const useSupabaseData = () => {
         error: null,
       });
 
-    } catch (error) {
+    } catch (error: any) {
+      console.warn('[SupabaseHook] Erro loadData:', error.message);
       setState(prev => ({
         ...prev,
         loading: false,
-        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        error: `Conexão lenta: ${error.message}`,
       }));
     }
   }, []);
 
-  // Funções CRUD
   const addUsuario = useCallback(async (usuario: Usuario): Promise<boolean> => {
     try {
-      const userUuid = crypto.randomUUID();
-      const { error } = await supabase
-        .from('usuarios')
-        .insert(convertToUsuarioInsert(usuario, userUuid));
-
+      const { error } = await supabase.from('usuarios').insert(convertToUsuarioInsert(usuario, crypto.randomUUID()));
       if (error) throw error;
-
-      await loadData(); // Recarregar dados
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar usuário' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
   }, [loadData]);
 
   const updateUsuario = useCallback(async (usuario: Usuario): Promise<boolean> => {
     try {
-      const userUuid = userUuidMap.get(usuario.id);
-      if (!userUuid) throw new Error('UUID do usuário não encontrado');
-
-      // Log detalhado para debug
-      const dadosParaAtualizar = {
-        nome: usuario.nome,
-        email: usuario.email,
-        tipo: usuario.tipo,
-        ativo: usuario.ativo,
-        espacos: usuario.espacos || null, // Enviar array diretamente
-        telefone: usuario.telefone || null,
-        senha: usuario.senha ? usuario.senha : null, // Não enviar senha se não for atualizada
-      };
-
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update(dadosParaAtualizar)
-        .eq('id', userUuid)
-        .select(); // Retornar os dados atualizados
-
-      if (error) {
-        throw error;
-      }
-
-      await loadData();
-      return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar usuário' }));
-      return false;
-    }
-  }, [userUuidMap, loadData]);
-
-  const deleteUsuario = useCallback(async (usuarioId: number): Promise<boolean> => {
-    try {
-      const userUuid = userUuidMap.get(usuarioId);
-      if (!userUuid) throw new Error('UUID do usuário não encontrado');
-
-      const { error } = await supabase
-        .from('usuarios')
-        .delete()
-        .eq('id', userUuid);
-
+      const { error } = await supabase.from('usuarios').update({
+        nome: usuario.nome, email: usuario.email, tipo: usuario.tipo,
+        ativo: usuario.ativo, espacos: usuario.espacos || null,
+        telefone: usuario.telefone || null, papel: usuario.papel || null
+      }).eq('id', usuario.id);
       if (error) throw error;
-
-      await loadData();
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar usuário' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
-  }, [userUuidMap, loadData]);
+  }, [loadData]);
+
+  const deleteUsuario = useCallback(async (usuarioId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from('usuarios').delete().eq('id', usuarioId);
+      if (error) throw error;
+      await loadData(true);
+      return true;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
+      return false;
+    }
+  }, [loadData]);
 
   const addEspaco = useCallback(async (espaco: Espaco): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('espacos')
-        .insert(convertToEspacoInsert(espaco));
-
+      const { error } = await supabase.from('espacos').insert(convertToEspacoInsert(espaco));
       if (error) throw error;
-
-      await loadData();
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar espaço' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
   }, [loadData]);
 
   const updateEspaco = useCallback(async (espaco: Espaco): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('espacos')
-        .update({
-          nome: espaco.nome,
-          capacidade: espaco.capacidade,
-          descricao: espaco.descricao || null,
-          equipamentos: espaco.equipamentos || null,
-          ativo: espaco.ativo,
-        })
-        .eq('id', espaco.id);
-
+      const { error } = await supabase.from('espacos').update({
+        nome: espaco.nome, capacidade: espaco.capacidade,
+        descricao: espaco.descricao || null, equipamentos: espaco.equipamentos || null, ativo: espaco.ativo
+      }).eq('id', espaco.id);
       if (error) throw error;
-
-      await loadData();
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar espaço' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
   }, [loadData]);
 
   const deleteEspaco = useCallback(async (espacoId: number): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('espacos')
-        .delete()
-        .eq('id', espacoId);
-
+      const { error } = await supabase.from('espacos').delete().eq('id', espacoId);
       if (error) throw error;
-
-      await loadData();
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar espaço' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
   }, [loadData]);
 
   const addAgendamento = useCallback(async (agendamento: Agendamento): Promise<boolean> => {
     try {
-      const userUuid = userUuidMap.get(agendamento.usuarioId);
-      if (!userUuid) throw new Error('UUID do usuário não encontrado');
-
-      // Capturar dados ANTES da inserção para evitar problemas de timing
-      const usuario = state.usuarios.find(u => u.id === agendamento.usuarioId);
-      const espaco = state.espacos.find(e => e.id === agendamento.espacoId);
-      const todosUsuarios = [...state.usuarios]; // Cópia dos usuários atuais
-
-      const { error } = await supabase
-        .from('agendamentos')
-        .insert(convertToAgendamentoInsert(agendamento, userUuid));
-
+      const { error } = await supabase.from('agendamentos').insert({
+        espaco_id: agendamento.espacoId, usuario_id: agendamento.usuarioId,
+        data: agendamento.data, aula_inicio: agendamento.aulaInicio, aula_fim: agendamento.aulaFim,
+        status: agendamento.status, observacoes: agendamento.observacoes || null,
+        agendamento_fixo_id: agendamento.agendamentoFixoId || null
+      });
       if (error) throw error;
 
-      await loadData();
-
-      // Enviar notificação por email para gestores após criação bem-sucedida
-      try {
-        if (usuario && espaco) {
-          const resultado = await NotificationService.notificarTodosGestores(agendamento, usuario, espaco, todosUsuarios);
-          // Notificação enviada com sucesso
-        } else {
-          // Dados insuficientes para notificação
-        }
-      } catch (emailError) {
-        // Não falha a operação se o email falhar
+      const usuario = state.usuarios.find(u => u.id === agendamento.usuarioId);
+      const espaco = state.espacos.find(e => e.id === agendamento.espacoId);
+      if (usuario && espaco) {
+        void NotificationService.notificarTodosGestores(agendamento, usuario, espaco, state.usuarios);
       }
 
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar agendamento' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
-  }, [userUuidMap, loadData, state.usuarios, state.espacos]);
+  }, [loadData, state.usuarios, state.espacos]);
 
   const updateAgendamentoStatus = useCallback(async (agendamentoId: number, status: 'pendente' | 'aprovado' | 'rejeitado'): Promise<boolean> => {
     try {
-      // Buscar o agendamento antes da atualização para ter os dados para notificação
       const agendamentoAtual = state.agendamentos.find(a => a.id === agendamentoId);
-      
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({ status })
-        .eq('id', agendamentoId);
 
+      const { error } = await supabase.from('agendamentos').update({ status }).eq('id', agendamentoId);
       if (error) throw error;
 
-      await loadData();
-
-      // Enviar notificação por email para o usuário sobre a decisão
       if (agendamentoAtual && (status === 'aprovado' || status === 'rejeitado')) {
-        try {
-          const usuario = state.usuarios.find(u => u.id === agendamentoAtual.usuarioId);
-          const espaco = state.espacos.find(e => e.id === agendamentoAtual.espacoId);
-          
-          // Encontrar um gestor para identificar quem aprovou/rejeitou (para fins de email)
-          const gestores = NotificationService.findGestoresDoEspaco(agendamentoAtual.espacoId, state.usuarios);
-          const gestor = gestores[0]; // Usar o primeiro gestor encontrado
-          
-          if (usuario && espaco && gestor) {
-            if (status === 'aprovado') {
-              await NotificationService.notificarUsuarioAprovacao(agendamentoAtual, usuario, espaco, gestor);
-            } else if (status === 'rejeitado') {
-              await NotificationService.notificarUsuarioRejeicao(agendamentoAtual, usuario, espaco, gestor);
-            }
+        const usuario = state.usuarios.find(u => u.id === agendamentoAtual.usuarioId);
+        const espaco = state.espacos.find(e => e.id === agendamentoAtual.espacoId);
+        const gestores = NotificationService.findGestoresDoEspaco(agendamentoAtual.espacoId, state.usuarios);
+        const gestor = gestores[0]; // Notifica o primeiro gestor encontrado como referência
+
+        if (usuario && espaco && gestor) {
+          if (status === 'aprovado') {
+            void NotificationService.notificarUsuarioAprovacao(agendamentoAtual, usuario, espaco, gestor);
+          } else {
+            void NotificationService.notificarUsuarioRejeicao(agendamentoAtual, usuario, espaco, gestor);
           }
-        } catch (emailError) {
-          // Não falha a operação se o email falhar
         }
       }
 
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar agendamento' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
   }, [loadData, state.agendamentos, state.usuarios, state.espacos]);
 
-  const updateAgendamento = useCallback(async (agendamento: Agendamento): Promise<boolean> => {
-    try {
-      const userUuid = userUuidMap.get(agendamento.usuarioId);
-      if (!userUuid) throw new Error('UUID do usuário não encontrado');
-
-      const { error } = await supabase
-        .from('agendamentos')
-        .update({
-          espaco_id: agendamento.espacoId,
-          usuario_id: userUuid,
-          data: agendamento.data,
-          aula_inicio: agendamento.aulaInicio,
-          aula_fim: agendamento.aulaFim,
-          status: agendamento.status,
-          observacoes: agendamento.observacoes || null,
-          agendamento_fixo_id: agendamento.agendamentoFixoId || null,
-        })
-        .eq('id', agendamento.id);
-
-      if (error) throw error;
-
-      await loadData();
-      return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar agendamento' }));
-      return false;
-    }
-  }, [userUuidMap, loadData]);
-
   const deleteAgendamento = useCallback(async (agendamentoId: number): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('agendamentos')
-        .delete()
-        .eq('id', agendamentoId);
-
+      const { error } = await supabase.from('agendamentos').delete().eq('id', agendamentoId);
       if (error) throw error;
-
-      await loadData();
+      await loadData(true);
       return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar agendamento' }));
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
       return false;
     }
   }, [loadData]);
 
-  // Funções para agendamentos fixos
-  const addAgendamentoFixo = useCallback(async (agendamentoFixo: AgendamentoFixo): Promise<boolean> => {
+  const addAgendamentoFixo = useCallback(async (af: AgendamentoFixo): Promise<boolean> => {
     try {
-      const userUuid = userUuidMap.get(agendamentoFixo.usuarioId);
-      if (!userUuid) throw new Error('UUID do usuário não encontrado');
-
-      const { error } = await supabase
-        .from('agendamentos_fixos')
-        .insert({
-          espaco_id: agendamentoFixo.espacoId,
-          usuario_id: userUuid,
-          data_inicio: agendamentoFixo.dataInicio,
-          data_fim: agendamentoFixo.dataFim,
-          aula_inicio: agendamentoFixo.aulaInicio,
-          aula_fim: agendamentoFixo.aulaFim,
-          dias_semana: agendamentoFixo.diasSemana,
-          observacoes: agendamentoFixo.observacoes || null,
-          ativo: agendamentoFixo.ativo,
-        });
-
-      if (error) throw error;
-
-      await loadData();
-      return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao adicionar agendamento fixo' }));
-      return false;
-    }
-  }, [userUuidMap, loadData]);
-
-  const updateAgendamentoFixo = useCallback(async (agendamentoFixo: AgendamentoFixo): Promise<boolean> => {
-    try {
-      const userUuid = userUuidMap.get(agendamentoFixo.usuarioId);
-      if (!userUuid) throw new Error('UUID do usuário não encontrado');
-
-      const { error } = await supabase
-        .from('agendamentos_fixos')
-        .update({
-          espaco_id: agendamentoFixo.espacoId,
-          usuario_id: userUuid,
-          data_inicio: agendamentoFixo.dataInicio,
-          data_fim: agendamentoFixo.dataFim,
-          aula_inicio: agendamentoFixo.aulaInicio,
-          aula_fim: agendamentoFixo.aulaFim,
-          dias_semana: agendamentoFixo.diasSemana,
-          observacoes: agendamentoFixo.observacoes || null,
-          ativo: agendamentoFixo.ativo,
-        })
-        .eq('id', agendamentoFixo.id);
-
-      if (error) throw error;
-
-      await loadData();
-      return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao atualizar agendamento fixo' }));
-      return false;
-    }
-  }, [userUuidMap, loadData]);
-
-  const deleteAgendamentoFixo = useCallback(async (agendamentoFixoId: number): Promise<boolean> => {
-    try {
-      const { error } = await supabase
-        .from('agendamentos_fixos')
-        .delete()
-        .eq('id', agendamentoFixoId);
-
-      if (error) throw error;
-
-      await loadData();
-      return true;
-    } catch (error) {
-      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Erro ao deletar agendamento fixo' }));
-      return false;
-    }
-  }, [loadData]);
-
-  // Carregar dados na inicialização
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Setup de realtime subscriptions
-  useEffect(() => {
-    const channels = [
-      supabase
-        .channel('usuarios_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios' }, () => {
-          loadData();
-        })
-        .subscribe(),
-
-      supabase
-        .channel('espacos_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'espacos' }, () => {
-          loadData();
-        })
-        .subscribe(),
-
-      supabase
-        .channel('agendamentos_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'agendamentos' }, () => {
-          loadData();
-        })
-        .subscribe(),
-
-      supabase
-        .channel('agendamentos_fixos_changes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'agendamentos_fixos' }, () => {
-          loadData();
-        })
-        .subscribe(),
-    ];
-
-    return () => {
-      channels.forEach(channel => {
-        supabase.removeChannel(channel);
+      const { error } = await supabase.from('agendamentos_fixos').insert({
+        espaco_id: af.espacoId, usuario_id: af.usuarioId, data_inicio: af.dataInicio,
+        data_fim: af.dataFim, aula_inicio: af.aulaInicio, aula_fim: af.aulaFim,
+        dias_semana: af.diasSemana, observacoes: af.observacoes || null, ativo: af.ativo
       });
-    };
+      if (error) throw error;
+      await loadData(true);
+      return true;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
+      return false;
+    }
   }, [loadData]);
 
-  return {
+  const deleteAgendamentoFixo = useCallback(async (afId: number): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from('agendamentos_fixos').delete().eq('id', afId);
+      if (error) throw error;
+      await loadData(true);
+      return true;
+    } catch (error: any) {
+      setState(prev => ({ ...prev, error: error.message }));
+      return false;
+    }
+  }, [loadData]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) loadData(true);
+      else setState(prev => ({ ...prev, usuarios: [], espacos: [], agendamentos: [], agendamentosFixos: [], loading: false, error: null }));
+    });
+    return () => subscription.unsubscribe();
+  }, [loadData]);
+
+  useEffect(() => {
+    const channel = supabase.channel('public_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios' }, () => loadData(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'espacos' }, () => loadData(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agendamentos' }, () => loadData(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agendamentos_fixos' }, () => loadData(true))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [loadData]);
+
+  return useMemo(() => ({
     ...state,
     actions: {
-      loadData,
-      addUsuario,
-      updateUsuario,
-      deleteUsuario,
-      toggleUsuarioStatus: async (id: number, ativo: boolean) => {
-        const usuario = state.usuarios.find(u => u.id === id);
-        if (usuario) {
-          return updateUsuario({ ...usuario, ativo });
-        }
-        return false;
+      loadData, addUsuario, updateUsuario, deleteUsuario,
+      toggleUsuarioStatus: async (id: string, ativo: boolean) => {
+        const u = state.usuarios.find(val => val.id === id);
+        return u ? updateUsuario({ ...u, ativo }) : false;
       },
-      addEspaco,
-      updateEspaco,
-      deleteEspaco,
+      addEspaco, updateEspaco, deleteEspaco,
       toggleEspacoStatus: async (id: number, ativo: boolean) => {
-        const espaco = state.espacos.find(e => e.id === id);
-        if (espaco) {
-          return updateEspaco({ ...espaco, ativo });
-        }
-        return false;
+        const e = state.espacos.find(val => val.id === id);
+        return e ? updateEspaco({ ...e, ativo }) : false;
       },
-      addAgendamento,
-      updateAgendamento,
-      deleteAgendamento,
-      updateAgendamentoStatus,
-      addAgendamentoFixo,
-      updateAgendamentoFixo,
-      deleteAgendamentoFixo,
-      refreshData: loadData,
+      addAgendamento, deleteAgendamento, updateAgendamentoStatus,
+      addAgendamentoFixo, deleteAgendamentoFixo, refreshData: loadData,
       clearError: () => setState(prev => ({ ...prev, error: null })),
     },
-  };
-}; 
+  }), [state, loadData, addUsuario, updateUsuario, deleteUsuario, addEspaco, updateEspaco, deleteEspaco, addAgendamento, deleteAgendamento, updateAgendamentoStatus, addAgendamentoFixo, deleteAgendamentoFixo]);
+};

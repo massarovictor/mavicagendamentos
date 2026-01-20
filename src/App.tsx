@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useRouteHistory } from "@/hooks/useRouteHistory";
+import { TipoUsuario } from "@/types";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Layout from "./components/Layout";
@@ -29,9 +29,9 @@ const TesteNotificacaoComponent = isDevelopment ? React.lazy(() => import("./pag
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isLoggedIn, isLoading } = useAuth();
-  
+const ProtectedRoute = ({ children, allowedTypes }: { children: React.ReactNode, allowedTypes?: TipoUsuario[] }) => {
+  const { isLoggedIn, isLoading, usuario } = useAuth();
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -39,8 +39,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       </div>
     );
   }
-  
-  return isLoggedIn ? <Layout>{children}</Layout> : <Navigate to="/login" />;
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" />;
+  }
+
+  if (allowedTypes && usuario && !allowedTypes.includes(usuario.tipo)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Layout>{children}</Layout>;
 };
 
 // Componente para redirecionamento após login
@@ -61,122 +69,122 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={isLoggedIn ? <LoginRedirect /> : <Login />} 
+      <Route
+        path="/login"
+        element={isLoggedIn ? <LoginRedirect /> : <Login />}
       />
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/espacos" 
+      <Route
+        path="/espacos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedTypes={['admin']}>
             <GerenciarEspacos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/usuarios" 
+      <Route
+        path="/usuarios"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedTypes={['admin']}>
             <GerenciarUsuarios />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/todos-agendamentos" 
+      <Route
+        path="/todos-agendamentos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedTypes={['admin']}>
             <TodosAgendamentos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/novo-agendamento" 
+      <Route
+        path="/novo-agendamento"
         element={
           <ProtectedRoute>
             <NovoAgendamento />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/meus-agendamentos" 
+      <Route
+        path="/meus-agendamentos"
         element={
           <ProtectedRoute>
             <MeusAgendamentos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/meus-espacos" 
+      <Route
+        path="/meus-espacos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedTypes={['gestor', 'admin']}>
             <MeusEspacos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/aprovar-agendamentos" 
+      <Route
+        path="/aprovar-agendamentos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedTypes={['gestor', 'admin']}>
             <AprovarAgendamentos />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/espacos-disponiveis" 
+      <Route
+        path="/espacos-disponiveis"
         element={
           <ProtectedRoute>
             <EspacosDisponiveis />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/agendamentos-fixos" 
+      <Route
+        path="/agendamentos-fixos"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedTypes={['admin', 'gestor']}>
             <AgendamentosFixos />
           </ProtectedRoute>
-        } 
+        }
       />
       {/* Rotas de debug (apenas em desenvolvimento) */}
       {isDevelopment && DebugComponent && (
-        <Route 
-          path="/debug" 
+        <Route
+          path="/debug"
           element={
             <ProtectedRoute>
               <React.Suspense fallback={<div>Carregando...</div>}>
                 <DebugComponent />
               </React.Suspense>
             </ProtectedRoute>
-          } 
+          }
         />
       )}
       {isDevelopment && TesteNotificacaoComponent && (
-        <Route 
-          path="/teste-notificacao" 
+        <Route
+          path="/teste-notificacao"
           element={
             <ProtectedRoute>
               <React.Suspense fallback={<div>Carregando...</div>}>
                 <TesteNotificacaoComponent />
               </React.Suspense>
             </ProtectedRoute>
-          } 
+          }
         />
       )}
-      <Route 
-        path="/" 
-        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
+      <Route
+        path="/"
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
       />
-      <Route 
-        path="*" 
-        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />} 
+      <Route
+        path="*"
+        element={isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
       />
     </Routes>
   );

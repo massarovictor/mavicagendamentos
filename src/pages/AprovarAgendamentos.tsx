@@ -31,7 +31,7 @@ const AprovarAgendamentos = () => {
 
   const detectConflicts = () => {
     const conflicts: { [key: string]: number[] } = {};
-    
+
     agendamentosMeusEspacos
       .filter(a => a.status === 'pendente')
       .forEach(agendamento => {
@@ -121,7 +121,7 @@ const AprovarAgendamentos = () => {
   const hasConflict = (agendamentoId: number) => getConflictForAgendamento(agendamentoId).length > 0;
 
   const getEspacoNome = (espacoId: number) => espacos.find(e => e.id === espacoId)?.nome || 'N/A';
-  const getUsuarioNome = (usuarioId: number) => usuarios.find(u => u.id === usuarioId)?.nome || 'N/A';
+  const getUsuarioNome = (usuarioId: string) => usuarios.find(u => u.id === usuarioId)?.nome || 'N/A';
 
   const getStatusBadge = (status: string) => {
     const baseClass = "text-xs font-semibold px-2.5 py-1 rounded-full border flex items-center gap-1.5";
@@ -133,8 +133,8 @@ const AprovarAgendamentos = () => {
     }
   };
 
-  const agendamentosFiltrados = filtroStatus === 'todos' 
-    ? agendamentosMeusEspacos 
+  const agendamentosFiltrados = filtroStatus === 'todos'
+    ? agendamentosMeusEspacos
     : agendamentosMeusEspacos.filter(a => a.status === filtroStatus);
 
   const counts = {
@@ -148,41 +148,45 @@ const AprovarAgendamentos = () => {
     rejeitados: agendamentosMeusEspacos.filter(a => a.status === 'rejeitado').length,
     conflitos: Object.keys(conflictGroups).length
   };
-  
+
   const columns = [
     { key: 'espaco', header: 'Espaço', accessor: (a: Agendamento) => <span className="font-semibold body-text">{getEspacoNome(a.espacoId)}</span> },
     { key: 'usuario', header: 'Usuário', accessor: (a: Agendamento) => <span className="caption-text">{getUsuarioNome(a.usuarioId)}</span>, hiddenOnMobile: true },
     { key: 'data', header: 'Data', accessor: (a: Agendamento) => <span className="caption-text">{formatDate(a.data)}</span> },
     { key: 'horario', header: 'Horário', accessor: (a: Agendamento) => <span className="body-text">{formatAulas(a.aulaInicio as NumeroAula, a.aulaFim as NumeroAula)}</span>, hiddenOnMobile: true },
-    { key: 'status', header: 'Status', accessor: (a: Agendamento) => (
-      <div className="flex items-center gap-2">
-        {getStatusBadge(a.status)}
-        {hasConflict(a.id) && <Badge variant="destructive" className="bg-status-warning text-status-warning-foreground hover:bg-status-warning/90">Conflito</Badge>}
-      </div>
-    )},
-    { key: 'acoes', header: 'Ações', accessor: (a: Agendamento) => (
-      <>
-        {a.status === 'pendente' && (
-          <div className="flex gap-2">
-            {hasConflict(a.id) ? (
-              <Button variant="outline" size="sm" onClick={() => handleConflictResolution(a.id)} className="border-status-warning text-status-warning hover:bg-status-warning-bg hover:text-status-warning-text">
-                <Users className="h-4 w-4 mr-1" />Resolver
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" size="sm" onClick={() => handleStatusChange(a.id, 'aprovado')} className="border-status-success text-status-success hover:bg-status-success-bg hover:text-status-success-text">
-                  <Check className="h-4 w-4" />
+    {
+      key: 'status', header: 'Status', accessor: (a: Agendamento) => (
+        <div className="flex items-center gap-2">
+          {getStatusBadge(a.status)}
+          {hasConflict(a.id) && <Badge variant="destructive" className="bg-status-warning text-status-warning-foreground hover:bg-status-warning/90">Conflito</Badge>}
+        </div>
+      )
+    },
+    {
+      key: 'acoes', header: 'Ações', accessor: (a: Agendamento) => (
+        <>
+          {a.status === 'pendente' && (
+            <div className="flex gap-2">
+              {hasConflict(a.id) ? (
+                <Button variant="outline" size="sm" onClick={() => handleConflictResolution(a.id)} className="border-status-warning text-status-warning hover:bg-status-warning-bg hover:text-status-warning-text">
+                  <Users className="h-4 w-4 mr-1" />Resolver
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleStatusChange(a.id, 'rejeitado')} className="border-status-error text-status-error hover:bg-status-error-bg hover:text-status-error-text">
-                  <X className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-        {a.status !== 'pendente' && <span className="caption-text italic">{a.status === 'aprovado' ? 'Finalizado' : 'Finalizado'}</span>}
-      </>
-    )}
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => handleStatusChange(a.id, 'aprovado')} className="border-status-success text-status-success hover:bg-status-success-bg hover:text-status-success-text">
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleStatusChange(a.id, 'rejeitado')} className="border-status-error text-status-error hover:bg-status-error-bg hover:text-status-error-text">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+          {a.status !== 'pendente' && <span className="caption-text italic">{a.status === 'aprovado' ? 'Finalizado' : 'Finalizado'}</span>}
+        </>
+      )
+    }
   ];
 
   const mobileCardRender = (item: Agendamento) => (
@@ -219,17 +223,17 @@ const AprovarAgendamentos = () => {
 
   if (loading) return <LoadingSpinner message="Carregando agendamentos..." />;
 
-  const selectedConflictAgendamento = selectedConflict 
+  const selectedConflictAgendamento = selectedConflict
     ? agendamentos.find(a => a.id === selectedConflict)
     : null;
 
-  const conflictingAgendamentos = selectedConflictAgendamento 
-    ? getConflictForAgendamento(selectedConflict!).map(id => 
-        agendamentos.find(a => a.id === id)!
-      ).filter(Boolean)
+  const conflictingAgendamentos = selectedConflictAgendamento
+    ? getConflictForAgendamento(selectedConflict!).map(id =>
+      agendamentos.find(a => a.id === id)!
+    ).filter(Boolean)
     : [];
 
-  const allConflictAgendamentos = selectedConflictAgendamento 
+  const allConflictAgendamentos = selectedConflictAgendamento
     ? [selectedConflictAgendamento, ...conflictingAgendamentos]
     : [];
 
@@ -241,12 +245,12 @@ const AprovarAgendamentos = () => {
           <p className="subtle-text">Gerencie os agendamentos pendentes dos seus espaços</p>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Calendar className="w-6 h-6 icon-accent"/></div><div className="metric-display">{counts.total}</div></div><div className="card-title">Total</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-warning/10 rounded-lg"><Clock className="w-6 h-6 text-status-warning"/></div><div className="metric-display text-status-warning">{counts.pendentes}</div></div><div className="card-title">Pendentes</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><Check className="w-6 h-6 text-status-success"/></div><div className="metric-display text-status-success">{counts.aprovados}</div></div><div className="card-title">Aprovados</div></CardContent></Card>
-        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-error-bg rounded-lg"><X className="w-6 h-6 text-status-error"/></div><div className="metric-display text-status-error">{counts.rejeitados}</div></div><div className="card-title">Rejeitados</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-primary/10 rounded-lg"><Calendar className="w-6 h-6 icon-accent" /></div><div className="metric-display">{counts.total}</div></div><div className="card-title">Total</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-warning/10 rounded-lg"><Clock className="w-6 h-6 text-status-warning" /></div><div className="metric-display text-status-warning">{counts.pendentes}</div></div><div className="card-title">Pendentes</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-success-bg rounded-lg"><Check className="w-6 h-6 text-status-success" /></div><div className="metric-display text-status-success">{counts.aprovados}</div></div><div className="card-title">Aprovados</div></CardContent></Card>
+        <Card className="enhanced-card"><CardContent className="refined-spacing"><div className="flex items-center justify-between mb-4"><div className="p-3 bg-status-error-bg rounded-lg"><X className="w-6 h-6 text-status-error" /></div><div className="metric-display text-status-error">{counts.rejeitados}</div></div><div className="card-title">Rejeitados</div></CardContent></Card>
       </div>
 
       {counts.conflitos > 0 && (
@@ -275,7 +279,7 @@ const AprovarAgendamentos = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       <Card id="lista-agendamentos" className="enhanced-card">
         <CardContent className="refined-spacing">
           <div className="flex items-center gap-2 mb-6"><CheckCircle className="w-5 h-5 icon-muted" /><h2 className="card-title">Lista de Agendamentos</h2></div>
